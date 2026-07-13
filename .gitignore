@@ -1,0 +1,46 @@
+# Secrets
+.env
+.env.local
+*.env
+!.env.example
+
+# ai-sync bridge (local cross-agent context, never shared via git)
+.ai-sync/
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+.next/
+out/
+dist/
+build/
+.turbo/
+
+# Uploads & local artifacts
+uploads/
+*.log
+
+# Large raw data blobs (keep small samples only; document source in data/raw/README.md)
+data/raw/**/*.zip
+data/raw/**/*.tar.gz
+data/raw/**/*.csv
+!data/raw/**/README.md
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
