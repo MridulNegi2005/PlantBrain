@@ -1,0 +1,18 @@
+# Interval 0 — core API + DB. Ingestion/RAG/graph libs added in later intervals
+# (kept lean here so setup stays fast and reliable during the hackathon).
+# Versions pinned post security-review (2026-07-13): fastapi/starlette/python-multipart/
+# python-dotenv/pytest bumped past known CVEs, verified with pip-audit.
+fastapi==0.139.0
+starlette==1.3.1
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+psycopg[binary]==3.2.3
+pgvector==0.3.6
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-dotenv==1.2.2
+python-multipart==0.0.31
+
+# Testing
+pytest==9.0.3
+httpx==0.28.1
