@@ -26,6 +26,7 @@ Open `http://localhost:3000`. `NEXT_PUBLIC_API_URL` defaults to `http://localhos
 ## Quality checks
 
 ```powershell
+npm run test
 npm run lint
 npm run typecheck
 npm run build
