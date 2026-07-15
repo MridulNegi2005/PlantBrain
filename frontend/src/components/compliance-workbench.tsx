@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useReducer, useState } from "react"
 import { ClipboardCheckIcon, FileWarningIcon, ShieldCheckIcon } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -19,23 +19,33 @@ import { Spinner } from "@/components/ui/spinner"
 import { StatusBadge } from "@/components/status-badge"
 import { checkCompliance } from "@/lib/api/client"
 import type { ComplianceReport } from "@/lib/api/types"
+import { idleRequestState, requestStateReducer } from "@/lib/request-state"
 
 export function ComplianceWorkbench() {
   const [assetTag, setAssetTag] = useState("V-301")
-  const [report, setReport] = useState<ComplianceReport | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [request, dispatch] = useReducer(
+    requestStateReducer<ComplianceReport>,
+    idleRequestState<ComplianceReport>()
+  )
+  const report = request.data
+  const busy = request.status === "loading"
 
   async function run(event: FormEvent) {
     event.preventDefault()
-    setBusy(true)
-    setError(null)
+    dispatch({ type: "start" })
     try {
-      setReport(await checkCompliance(assetTag.trim().toUpperCase()))
+      dispatch({
+        type: "succeed",
+        data: await checkCompliance(assetTag.trim().toUpperCase()),
+      })
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The compliance check could not be completed.")
-    } finally {
-      setBusy(false)
+      dispatch({
+        type: "fail",
+        error:
+          caught instanceof Error
+            ? caught.message
+            : "The compliance check could not be completed.",
+      })
     }
   }
 
@@ -57,7 +67,7 @@ export function ComplianceWorkbench() {
                 </InputGroup>
                 <FieldDescription>V-301 is prepared with an intentional certificate gap.</FieldDescription>
               </Field>
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              {request.error ? <p className="text-sm text-destructive">{request.error}</p> : null}
               <Button type="submit" disabled={!assetTag.trim() || busy}>
                 {busy ? <Spinner data-icon="inline-start" /> : <ClipboardCheckIcon data-icon="inline-start" />}
                 {busy ? "Checking" : "Check evidence"}
@@ -108,9 +118,13 @@ export function ComplianceWorkbench() {
       ) : (
         <Card className="min-h-[28rem] items-center justify-center">
           <CardContent className="text-center">
-            <ClipboardCheckIcon className="mx-auto size-8 text-muted-foreground" />
-            <p className="mt-4 font-medium">No evidence check run</p>
-            <p className="mt-1 text-sm text-muted-foreground">Run V-301 to inspect the missing pressure-test certificate story.</p>
+            {busy ? <Spinner className="mx-auto size-8" /> : <ClipboardCheckIcon className="mx-auto size-8 text-muted-foreground" />}
+            <p className="mt-4 font-medium">{busy ? "Checking the evidence packet" : "No evidence check run"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {busy
+                ? "The previous result has been cleared while this asset is checked."
+                : "Run V-301 to inspect the missing pressure-test certificate story."}
+            </p>
           </CardContent>
         </Card>
       )}

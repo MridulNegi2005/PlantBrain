@@ -55,6 +55,7 @@ export function EvaluationWorkbench({ cases, total }: { cases: EvaluationCase[];
     setBusy(true)
     setError(null)
     setNotice(null)
+    setRun(null)
     try {
       const started = await startEvaluation()
       setRun({ id: started.run_id, status: started.status })
