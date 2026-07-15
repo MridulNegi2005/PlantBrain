@@ -19,8 +19,8 @@ import { getAsset, getAssetTimeline, getDocuments } from "@/lib/api/client"
 import { formatDate, titleCase } from "@/lib/format"
 
 export default async function AssetProfilePage({ params }: { params: Promise<{ assetTag: string }> }) {
-  const { assetTag: encodedTag } = await params
-  const assetTag = decodeURIComponent(encodedTag).toUpperCase()
+  const { assetTag: rawTag } = await params
+  const assetTag = rawTag.toUpperCase()
   const documentQuery = new URLSearchParams({ asset_tag: assetTag })
   const [assetResult, timelineResult, documentsResult] = await Promise.allSettled([
     getAsset(assetTag),

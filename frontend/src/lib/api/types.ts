@@ -121,6 +121,20 @@ export type RcaReport = {
   recommended_actions: string[]
 }
 
+export type SimilarIncident = {
+  incident_id: string
+  similarity: number
+  summary: string
+  citations: Array<{
+    document: string
+    page: number
+  }>
+}
+
+export type SimilarLessonsResponse = {
+  items: SimilarIncident[]
+}
+
 export type ComplianceReport = {
   asset: string
   requirement: string

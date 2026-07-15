@@ -16,6 +16,7 @@ import type {
   ListResponse,
   RcaReport,
   SecurityEvent,
+  SimilarLessonsResponse,
   UploadedDocument,
 } from "@/lib/api/types"
 
@@ -132,6 +133,13 @@ export function generateRca(assetTag: string, issue: string) {
   return request<RcaReport>("/api/rca/generate", {
     method: "POST",
     body: JSON.stringify({ asset_tag: assetTag, issue }),
+  })
+}
+
+export function findSimilarLessons(failureMode: string) {
+  return request<SimilarLessonsResponse>("/api/lessons/similar", {
+    method: "POST",
+    body: JSON.stringify({ failure_mode: failureMode }),
   })
 }
 

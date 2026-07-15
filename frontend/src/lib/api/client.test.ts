@@ -5,6 +5,7 @@ import {
   ApiError,
   askCopilot,
   checkCompliance,
+  findSimilarLessons,
   generateRca,
   getAsset,
   getAssetGraph,
@@ -120,6 +121,12 @@ describe("PlantBrain API client", () => {
       call: () => checkCompliance("V-301"),
       path: "/api/compliance/check",
       body: { asset_tag: "V-301" },
+    },
+    {
+      name: "similar lessons",
+      call: () => findSimilarLessons("seal leakage"),
+      path: "/api/lessons/similar",
+      body: { failure_mode: "seal leakage" },
     },
   ])("serializes the $name request contract", async ({ call, path, body }) => {
     await call()
