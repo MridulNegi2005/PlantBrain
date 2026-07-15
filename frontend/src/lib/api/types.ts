@@ -27,6 +27,11 @@ export type DocumentSummary = {
   created_at: string
 }
 
+export type DocumentDetail = DocumentSummary & {
+  page_count: number
+  chunks_count: number
+}
+
 export type UploadedDocument = {
   id: string
   filename: string
@@ -173,5 +178,11 @@ export type ApiErrorShape = {
   error?: {
     code?: string
     message?: string
+  }
+  detail?: {
+    error?: {
+      code?: string
+      message?: string
+    }
   }
 }

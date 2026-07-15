@@ -51,7 +51,12 @@ export default async function DocumentsPage() {
                 <TableRow key={document.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{document.filename}</p>
+                      <Link
+                        href={`/documents/${encodeURIComponent(document.id)}`}
+                        className="font-medium underline-offset-4 hover:text-primary hover:underline"
+                      >
+                        {document.filename}
+                      </Link>
                       <p className="font-mono text-[0.68rem] text-muted-foreground">{document.id}</p>
                     </div>
                   </TableCell>

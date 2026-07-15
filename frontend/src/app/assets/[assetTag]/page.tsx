@@ -77,7 +77,12 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
                   <time className="font-mono text-xs text-muted-foreground">{formatDate(item.date)}</time>
                 </div>
                 <p className="mt-3 text-sm font-medium">{item.title}</p>
-                <p className="mt-1 font-mono text-[0.68rem] text-muted-foreground">Evidence: {item.document_id}</p>
+                <Link
+                  href={`/documents/${encodeURIComponent(item.document_id)}`}
+                  className="mt-2 inline-flex font-mono text-[0.68rem] text-primary underline-offset-4 hover:underline"
+                >
+                  Open evidence: {item.document_id}
+                </Link>
               </article>
             ))}
           </CardContent>
@@ -94,7 +99,12 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
               <div key={document.id}>
                 <div className="flex items-start justify-between gap-3 py-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{document.filename}</p>
+                    <Link
+                      href={`/documents/${encodeURIComponent(document.id)}`}
+                      className="block truncate text-sm font-medium underline-offset-4 hover:text-primary hover:underline"
+                    >
+                      {document.filename}
+                    </Link>
                     <p className="mt-1 text-xs text-muted-foreground">{titleCase(document.doc_type)}</p>
                   </div>
                   <StatusBadge status={document.status} />

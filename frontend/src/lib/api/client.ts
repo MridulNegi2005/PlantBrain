@@ -6,6 +6,7 @@ import type {
   AuditLog,
   ComplianceReport,
   CopilotAnswer,
+  DocumentDetail,
   DocumentSummary,
   EvaluationCase,
   EvaluationRun,
@@ -51,10 +52,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       payload = undefined
     }
+    const backendError = payload?.error ?? payload?.detail?.error
     throw new ApiError(
-      payload?.error?.message ?? `Request failed with status ${response.status}`,
+      backendError?.message ?? `Request failed with status ${response.status}`,
       response.status,
-      payload?.error?.code
+      backendError?.code
     )
   }
 
@@ -68,6 +70,12 @@ export function getHealth() {
 export function getDocuments(query?: URLSearchParams) {
   const suffix = query?.size ? `?${query.toString()}` : ""
   return request<ListResponse<DocumentSummary>>(`/api/documents${suffix}`)
+}
+
+export function getDocument(documentId: string) {
+  return request<DocumentDetail>(
+    `/api/documents/${encodeURIComponent(documentId)}`
+  )
 }
 
 export function uploadDocument(file: File, plantId?: string) {

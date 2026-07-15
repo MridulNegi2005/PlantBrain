@@ -36,7 +36,7 @@ npm run build
 
 - `/dashboard` — plant overview and service health
 - `/upload` — document upload and ingestion-status timeline
-- `/documents` — ingestion registry
+- `/documents` and `/documents/doc_01HXYZ` — ingestion registry and evidence record
 - `/assets` and `/assets/P-204A` — asset index and evidence profile
 - `/copilot` — cited question answering with a source drawer
 - `/graph` — provenance-scored knowledge graph

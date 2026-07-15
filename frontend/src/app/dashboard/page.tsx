@@ -184,7 +184,11 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {documents?.items.slice(0, 6).map((document) => (
-              <div key={document.id} className="rounded-lg border bg-background/50 p-3">
+              <Link
+                key={document.id}
+                href={`/documents/${encodeURIComponent(document.id)}`}
+                className="rounded-lg border bg-background/50 p-3 transition-colors hover:border-primary/50 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <p className="truncate text-sm font-medium">{document.filename}</p>
                   <StatusBadge status={document.status} />
@@ -192,7 +196,7 @@ export default async function DashboardPage() {
                 <p className="mt-3 font-mono text-[0.68rem] text-muted-foreground">
                   {titleCase(document.doc_type)} · {formatDate(document.created_at)}
                 </p>
-              </div>
+              </Link>
             ))}
           </CardContent>
         </Card>

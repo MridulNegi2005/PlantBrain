@@ -12,6 +12,7 @@ import {
   getAssets,
   getAuditLogs,
   getDocuments,
+  getDocument,
   getEvaluationCases,
   getEvaluationRun,
   getHealth,
@@ -64,6 +65,7 @@ describe("PlantBrain API client", () => {
   })
 
   it("encodes identifiers placed in request paths", async () => {
+    await getDocument("doc/42")
     await getAsset("P/204 A")
     await getAssetTimeline("P/204 A")
     await getAssetGraph("P/204 A")
@@ -72,6 +74,7 @@ describe("PlantBrain API client", () => {
     await getEvaluationRun("run/42")
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      `${API_URL}/api/documents/doc%2F42`,
       `${API_URL}/api/assets/P%2F204%20A`,
       `${API_URL}/api/assets/P%2F204%20A/timeline`,
       `${API_URL}/api/assets/P%2F204%20A/graph`,
@@ -180,6 +183,29 @@ describe("PlantBrain API client", () => {
       message: "Asset P-999 was not found",
       status: 404,
       code: "asset_not_found",
+    } satisfies Partial<ApiError>)
+  })
+
+  it("unwraps FastAPI HTTPException error details", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          detail: {
+            error: {
+              code: "not_found",
+              message: "Document doc_missing not found.",
+            },
+          },
+        },
+        404
+      )
+    )
+
+    await expect(getDocument("doc_missing")).rejects.toMatchObject({
+      name: "ApiError",
+      message: "Document doc_missing not found.",
+      status: 404,
+      code: "not_found",
     } satisfies Partial<ApiError>)
   })
 
