@@ -1,5 +1,8 @@
 # PlantBrain AI — API Contract (v0.1)
 
+> **v0.3 (Interval 4):** `POST /api/rca/generate`, `POST /api/compliance/check`, and
+> `POST /api/lessons/similar` are now real (GraphRAG + LLM), each grounded with citations; RCA/compliance
+> refuse or return `status:"unknown"` when evidence is absent. Only evaluation remains a fixture stub.
 > **v0.2 (Interval 3):** `POST /api/copilot/ask` is now real GraphRAG (pgvector + knowledge-graph
 > traversal + LLM synthesis) — returns `answer`, `confidence`, `citations`, `graph_path`,
 > `missing_evidence`, `recommended_next_actions`; refuses (`answer: null`) when no evidence supports it.
