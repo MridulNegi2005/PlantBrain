@@ -46,6 +46,11 @@ def answer(db: Session, question: str, *, asset_tag: str | None = None) -> dict:
                 "confidence": 0.0, "graph_path": [], "missing_evidence": [],
                 "recommended_next_actions": []}
 
+    # Untrusted-document defense: log any injection attempt in the retrieved text.
+    # The LLM system prompt still instructs the model to ignore such instructions.
+    from app.security.injection import check_evidence
+    check_evidence(db, evidence)
+
     if llm.available():
         try:
             return _llm_answer(question, evidence, result["graph_path"])

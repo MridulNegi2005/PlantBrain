@@ -1,5 +1,9 @@
 # PlantBrain AI — API Contract (v0.1)
 
+> **v0.4 (Interval 5):** `POST /api/evaluation/run` + `GET /api/evaluation/runs/{id}` now execute the real
+> RAGAS-style eval harness over the gold set (metrics come from actual runs); `GET /api/evaluation/runs`
+> returns the latest completed run. `/api/security-events` now surfaces logged prompt-injection attempts.
+> **All endpoints are now real — no fixtures remain.**
 > **v0.3 (Interval 4):** `POST /api/rca/generate`, `POST /api/compliance/check`, and
 > `POST /api/lessons/similar` are now real (GraphRAG + LLM), each grounded with citations; RCA/compliance
 > refuse or return `status:"unknown"` when evidence is absent. Only evaluation remains a fixture stub.

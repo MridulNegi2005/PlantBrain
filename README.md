@@ -24,6 +24,7 @@ python -m scripts.generate_corpus     # writes the synthetic demo corpus into ..
 python -m scripts.load_corpus         # registers the corpus as documents in Postgres
 python -m scripts.ingest_corpus       # extract -> chunk -> embed all docs into pgvector
 python -m scripts.build_graph         # build the knowledge graph (nodes/edges/entities)
+python -m scripts.run_eval            # (optional) run the eval harness, store metrics
 
 uvicorn app.main:app --reload --port 8000
 ```

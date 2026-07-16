@@ -166,3 +166,24 @@ class SecurityEvent(Base):
     resource_id: Mapped[str | None] = mapped_column(String)
     detail: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[dt.datetime] = _now_col()
+
+
+class EvaluationCase(Base):
+    __tablename__ = "evaluation_cases"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    question: Mapped[str] = mapped_column(Text, nullable=False)
+    category: Mapped[str] = mapped_column(String, default="general")
+    expected_docs: Mapped[list] = mapped_column(JSON, default=list)
+    expected_points: Mapped[list] = mapped_column(JSON, default=list)
+    asset_tag: Mapped[str | None] = mapped_column(String)
+
+
+class EvaluationRun(Base):
+    __tablename__ = "evaluation_runs"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    status: Mapped[str] = mapped_column(String, default="running")
+    metrics: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[dt.datetime] = _now_col()
+    completed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
