@@ -13,9 +13,16 @@ class Settings(BaseSettings):
     postgres_host: str = "localhost"
     postgres_port: int = 5432
 
-    # LLM is optional, only used from Interval 3 onward. Blank => free local model.
-    anthropic_api_key: str = ""
+    # LLM (Interval 3+). OpenAI-compatible client so we can point at Groq (free tier)
+    # now or a local Ollama later by changing only these values.
+    llm_api_key: str = ""
+    llm_base_url: str = "https://api.groq.com/openai/v1"
+    llm_model: str = "llama-3.3-70b-versatile"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
+
+    @property
+    def llm_enabled(self) -> bool:
+        return bool(self.llm_api_key)
 
     env: str = "development"
     jwt_secret: str = "change-me-in-production"
