@@ -67,9 +67,9 @@ Query: `plant_id`, `doc_type`, `asset_tag`, `status`, `page`, `page_size`.
 ```
 
 ### `GET /api/documents/{id}/chunks`
-Page-level chunks for the evidence / citation drawer. Returns a small stub sample
-(`"stub": true`) until the Interval 2 ingestion pipeline populates real chunks; the
-item shape does not change when it goes real.
+Page-level chunks for the evidence / citation drawer. Returns **real chunks** once a
+document has been ingested (`"stub": false`); for a not-yet-ingested document it
+returns a small stub sample (`"stub": true`) with the same item shape.
 ```json
 {
   "items": [

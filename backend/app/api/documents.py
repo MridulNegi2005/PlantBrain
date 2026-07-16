@@ -2,7 +2,7 @@ import hashlib
 import os
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -11,6 +11,7 @@ from app.db.base import gen_id
 from app.db.crud import write_audit
 from app.db.seed import PLANT_ID
 from app.db.session import get_db
+from app.ingestion.pipeline import run_ingestion_bg
 
 router = APIRouter(prefix="/api", tags=["documents"])
 
@@ -153,7 +154,8 @@ def get_document_chunks(document_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/documents/{document_id}/ingest", status_code=202)
-def trigger_ingest(document_id: str, db: Session = Depends(get_db)):
+def trigger_ingest(document_id: str, background_tasks: BackgroundTasks,
+                   db: Session = Depends(get_db)):
     doc = db.get(models.Document, document_id)
     if doc is None:
         raise HTTPException(status_code=404, detail={"error": {
@@ -163,7 +165,9 @@ def trigger_ingest(document_id: str, db: Session = Depends(get_db)):
     db.add(job)
     write_audit(db, action="document.ingest", resource_type="document", resource_id=document_id)
     db.commit()
-    # Actual pipeline execution lands in Interval 2; for now the job is queued.
+    # Run the extract -> chunk -> embed pipeline after the response is sent; the
+    # frontend polls GET /ingestion-jobs/{id} to watch the status advance.
+    background_tasks.add_task(run_ingestion_bg, document_id, job.id)
     return {"ingestion_job_id": job.id, "status": job.status}
 
 
