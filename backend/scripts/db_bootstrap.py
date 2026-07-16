@@ -56,13 +56,28 @@ def main() -> int:
 
     # Create tables and seed the demo plant/assets (imported here so a bad DATABASE_URL
     # fails at the connection step above, not at import time).
+    from sqlalchemy import text as _sql
+
     from app.db.base import Base
     from app.db import models  # noqa: F401  (registers tables on Base.metadata)
     from app.db.seed import seed
-    from app.db.session import engine
+    from app.db.session import engine, pgvector_available
+    from app.ingestion.embed import EMBED_DIM
 
     Base.metadata.create_all(bind=engine)
     print(f"tables created ({len(Base.metadata.tables)} tables)")
+
+    # Add the pgvector embedding column + ANN index (kept out of the ORM model so the
+    # schema stays SQLite-compatible for hermetic tests).
+    if pgvector_available():
+        with engine.begin() as conn:
+            conn.execute(_sql(
+                f"ALTER TABLE chunks ADD COLUMN IF NOT EXISTS embedding vector({EMBED_DIM})"))
+            conn.execute(_sql(
+                "CREATE INDEX IF NOT EXISTS chunks_embedding_hnsw "
+                "ON chunks USING hnsw (embedding vector_cosine_ops)"))
+        print(f"pgvector embedding column ready (vector({EMBED_DIM}) + HNSW index)")
+
     seed()
     print("seeded demo plant + assets")
 
