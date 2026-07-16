@@ -1,9 +1,12 @@
 # PlantBrain AI — API Contract (v0.1)
 
-> **v0.1 (Interval 1):** documents/assets/ingestion/audit endpoints are now backed by
-> real Postgres (shapes unchanged from v0). Added `GET /api/documents/{id}/chunks` for
-> the evidence view. copilot/rca/compliance/lessons/evaluation remain fixture stubs
-> until Intervals 3-5.
+> **v0.2 (Interval 3):** `POST /api/copilot/ask` is now real GraphRAG (pgvector + knowledge-graph
+> traversal + LLM synthesis) — returns `answer`, `confidence`, `citations`, `graph_path`,
+> `missing_evidence`, `recommended_next_actions`; refuses (`answer: null`) when no evidence supports it.
+> `GET /api/assets/{tag}/graph` now returns the real knowledge graph. rca/compliance/lessons/evaluation
+> remain fixture stubs until Intervals 4-5.
+> **v0.1 (Interval 1):** documents/assets/ingestion/audit backed by real Postgres; added
+> `GET /api/documents/{id}/chunks`.
 
 This is the contract for the FastAPI backend. All endpoints below are **live as stubs right now**, returning
 fixture data shaped exactly like the real thing will be. Build the frontend against these — when real

@@ -23,6 +23,7 @@ python -m scripts.db_bootstrap        # creates the plantbrain DB, tables (+ pgv
 python -m scripts.generate_corpus     # writes the synthetic demo corpus into ../data/synthetic
 python -m scripts.load_corpus         # registers the corpus as documents in Postgres
 python -m scripts.ingest_corpus       # extract -> chunk -> embed all docs into pgvector
+python -m scripts.build_graph         # build the knowledge graph (nodes/edges/entities)
 
 uvicorn app.main:app --reload --port 8000
 ```
@@ -31,8 +32,9 @@ vars in `.env`. Visit `http://localhost:8000/docs` for interactive API docs, or 
 to check DB + pgvector status. Embeddings are stored in Postgres via **pgvector** (bge-small, 384-dim, via
 fastembed — local and free). The first `ingest_corpus`/embed call downloads the ONNX model once (~100MB, cached).
 
-The LLM is **optional** and only used from Interval 3 onward; it will run on a free local model (Ollama), so
-no paid API key is required. Embeddings are local (sentence-transformers), also free.
+The cited copilot uses an **OpenAI-compatible LLM** (Groq free tier by default — set `LLM_API_KEY` in `.env`;
+or point `LLM_BASE_URL` at a local Ollama). Without a key it falls back to extractive cited answers.
+Embeddings are local/free (fastembed).
 
 Run tests: `python -m pytest tests/ -q` (10 passing, hermetic — uses in-memory SQLite, never the hosted DB).
 

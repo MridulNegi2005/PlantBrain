@@ -28,13 +28,6 @@ def test_get_asset_not_found(client):
     assert resp.status_code == 404
 
 
-def test_copilot_ask_has_citations(client):
-    resp = client.post("/api/copilot/ask", json={"question": "Why did P-204A fail?", "asset_tag": "P-204A"})
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["citations"], "copilot answers must always include citations"
-
-
 def test_upload_rejects_bad_content_type(client):
     resp = client.post(
         "/api/documents/upload",

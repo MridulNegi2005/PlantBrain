@@ -66,8 +66,11 @@ def get_asset_timeline(asset_tag: str, db: Session = Depends(get_db)):
 def get_asset_graph(asset_tag: str, db: Session = Depends(get_db)):
     if db.get(models.Asset, asset_tag) is None:
         _not_found(asset_tag)
-    # Graph is populated in Interval 3 (KG builder). Return the asset node plus its
-    # linked-document nodes so the viewer renders real structure now.
+    from app.graph.query import asset_subgraph
+    sub = asset_subgraph(db, asset_tag)
+    if sub["nodes"]:
+        return sub
+    # graph not built yet — fall back to asset + linked documents
     docs = [d for d in db.query(models.Document).all() if asset_tag in (d.asset_tags or [])]
     nodes = [{"id": f"asset:{asset_tag}", "type": "Asset", "label": asset_tag}]
     edges = []
