@@ -1,4 +1,9 @@
-# PlantBrain AI — API Contract (v0, Interval 0)
+# PlantBrain AI — API Contract (v0.1)
+
+> **v0.1 (Interval 1):** documents/assets/ingestion/audit endpoints are now backed by
+> real Postgres (shapes unchanged from v0). Added `GET /api/documents/{id}/chunks` for
+> the evidence view. copilot/rca/compliance/lessons/evaluation remain fixture stubs
+> until Intervals 3-5.
 
 This is the contract for the FastAPI backend. All endpoints below are **live as stubs right now**, returning
 fixture data shaped exactly like the real thing will be. Build the frontend against these — when real
@@ -58,6 +63,21 @@ Query: `plant_id`, `doc_type`, `asset_tag`, `status`, `page`, `page_size`.
   "id": "doc_01HXYZ", "filename": "WO-129.pdf", "doc_type": "work_order",
   "status": "completed", "asset_tags": ["P-204A"], "page_count": 3,
   "chunks_count": 12, "created_at": "2026-07-13T10:00:00Z"
+}
+```
+
+### `GET /api/documents/{id}/chunks`
+Page-level chunks for the evidence / citation drawer. Returns a small stub sample
+(`"stub": true`) until the Interval 2 ingestion pipeline populates real chunks; the
+item shape does not change when it goes real.
+```json
+{
+  "items": [
+    { "chunk_id": "chunk_88", "page": 2, "text": "Observed abnormal vibration…",
+      "bbox": {"x0": 72, "y0": 400, "x1": 520, "y1": 430}, "asset_tags": ["P-204A"] }
+  ],
+  "total": 1,
+  "stub": false
 }
 ```
 
