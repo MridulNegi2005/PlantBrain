@@ -7,7 +7,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-engine = create_engine(settings.database_url, pool_pre_ping=True)
+engine = create_engine(settings.sqlalchemy_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -30,12 +30,23 @@ def check_connection() -> bool:
         return False
 
 
-def ensure_pgvector() -> bool:
-    """Enable the pgvector extension if not already present.
+def pgvector_available() -> bool:
+    """Check (without side effects) whether the pgvector extension is enabled."""
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT 1 FROM pg_extension WHERE extname = 'vector'")
+            ).fetchone()
+        return row is not None
+    except Exception:
+        return False
 
-    Returns True if pgvector is available after this call, False if it could not
-    be enabled (e.g. insufficient privileges) — callers should fall back to an
-    embedded vector store (Chroma) in that case.
+
+def ensure_pgvector() -> bool:
+    """Enable pgvector if available on the server. Used by the bootstrap script.
+
+    Returns True if enabled afterwards, False if it could not be enabled (e.g. the
+    extension is not installed) — callers fall back to an embedded store (Chroma).
     """
     try:
         with engine.begin() as conn:

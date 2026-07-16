@@ -15,16 +15,25 @@ ET AI Hackathon 2026 — Problem Statement 8 (AI for Industrial Knowledge Intell
 ```bash
 cd backend
 python -m venv .venv
-source .venv/Scripts/activate   # Windows Git Bash; use .venv\Scripts\activate.bat for cmd.exe
+source .venv/Scripts/activate        # Windows Git Bash; use .venv\Scripts\activate.bat for cmd.exe
 pip install -r requirements.txt
-cp .env.example .env            # then fill in DATABASE_URL (hosted Postgres) + ANTHROPIC_API_KEY
+cp .env.example .env                  # fill in POSTGRES_* (hosted Postgres). No API key needed.
+
+python -m scripts.db_bootstrap        # creates the plantbrain DB, tables, seeds demo assets
+python -m scripts.generate_corpus     # writes the synthetic demo corpus into ../data/synthetic
+python -m scripts.load_corpus         # registers the corpus as documents in Postgres
+
 uvicorn app.main:app --reload --port 8000
 ```
-No Docker required — the app connects directly to a hosted Postgres instance via `DATABASE_URL`. Visit
-`http://localhost:8000/docs` for interactive API docs, or `http://localhost:8000/health` to check DB +
-pgvector status.
+No Docker required — the app connects directly to a hosted Postgres instance built from the `POSTGRES_*`
+vars in `.env`. Visit `http://localhost:8000/docs` for interactive API docs, or `http://localhost:8000/health`
+to check DB + pgvector status. (pgvector isn't installed on the current server, so vectors will use a Chroma
+fallback in Interval 2 — relational data lives in real Postgres.)
 
-Run tests: `python -m pytest tests/ -v` (6 passing as of Interval 0).
+The LLM is **optional** and only used from Interval 3 onward; it will run on a free local model (Ollama), so
+no paid API key is required. Embeddings are local (sentence-transformers), also free.
+
+Run tests: `python -m pytest tests/ -q` (10 passing, hermetic — uses in-memory SQLite, never the hosted DB).
 
 ## Frontend setup
 ```bash

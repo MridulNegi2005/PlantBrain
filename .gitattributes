@@ -1,0 +1,15 @@
+# Normalize text line endings, but never touch binary assets (CRLF conversion
+# would corrupt them). Keeps the synthetic PDF corpus and fonts intact cross-OS.
+* text=auto
+
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.xlsx binary

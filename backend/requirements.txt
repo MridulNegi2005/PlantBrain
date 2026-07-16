@@ -13,6 +13,10 @@ pydantic-settings==2.7.0
 python-dotenv==1.2.2
 python-multipart==0.0.31
 
+# Corpus generation (synthetic demo documents)
+reportlab==4.2.5
+pypdf==6.13.3
+
 # Testing
 pytest==9.0.3
 httpx==0.28.1
