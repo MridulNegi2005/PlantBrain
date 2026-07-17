@@ -42,7 +42,7 @@ export default async function DashboardPage() {
         eyebrow="Plant control dossier"
         title="Operational knowledge. Source attached."
         description="A live index of Shakti Petrochem Unit-2—assets, evidence, risk signals, and the provenance behind every operational conclusion."
-        status={health?.status === "ok" ? "Systems linked" : "Backend offline"}
+        status={health?.db_connected ? "Systems linked" : "Backend unavailable"}
       />
 
       {!health || !documents || !assets ? <DataUnavailable label="Plant overview data" /> : null}
@@ -120,8 +120,8 @@ export default async function DashboardPage() {
             <dl className="divide-y divide-border px-4">
               {[
                 ["API service", health?.status ?? "offline"],
-                ["PostgreSQL", health?.db_connected ? "connected" : "offline"],
-                ["pgvector", health?.pgvector_enabled ? "enabled" : "offline"],
+                ["Evidence database", health?.db_connected ? "connected" : "offline"],
+                ["pgvector extension", health?.pgvector_enabled ? "enabled" : "not enabled"],
               ].map(([label, status]) => (
                 <div key={label} className="flex min-h-12 items-center justify-between gap-3 py-2">
                   <dt className="text-sm text-muted-foreground">{label}</dt>
@@ -143,9 +143,9 @@ export default async function DashboardPage() {
               {security?.items.slice(0, 2).map((event) => (
                 <article key={event.id} className="p-4">
                   <p className="font-mono text-[0.65rem] font-semibold text-destructive uppercase">{titleCase(event.event_type)}</p>
-                  <p className="mt-2 text-sm leading-5 text-muted-foreground">{event.detail}</p>
+                  <p className="mt-2 text-sm leading-5 text-muted-foreground">{event.detail ?? "No event detail was recorded."}</p>
                   <p className="mt-3 font-mono text-[0.6rem] text-muted-foreground">
-                    {event.resource_id} / {formatDate(event.created_at)}
+                    {event.resource_id ?? "No resource ID"} / {formatDate(event.created_at)}
                   </p>
                 </article>
               ))}

@@ -50,7 +50,7 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
       <PageHeader
         eyebrow={asset.asset_type}
         title={asset.asset_tag}
-        description={asset.summary}
+        description={asset.summary ?? "No operational summary has been recorded for this asset."}
         status={asset.plant_id.toUpperCase()}
       />
 

@@ -36,18 +36,18 @@ export default async function AuditPage() {
       <PageHeader
         eyebrow="Audit and security trail"
         title="Every consequential action leaves a record."
-        description="Review document, ingestion, AI, and security activity with actors, resources, and timestamps preserved for operational trust."
-        status={logs ? `${logs.total} AUDIT EVENTS` : "UNAVAILABLE"}
+        description="Review document, ingestion, AI, and security activity with attribution state, resources, and timestamps preserved for operational trust."
+        status={logs ? `${logs.total} EVENTS SHOWN` : "UNAVAILABLE"}
       />
       {!logs ? <DataUnavailable label="Audit log" /> : null}
 
       <section className="grid gap-px border border-border bg-border lg:grid-cols-3" aria-label="Audit summary">
         <div className="bg-card p-5">
-          <p className="technical-label">Audit events</p>
+          <p className="technical-label">Audit events shown</p>
           <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{logs?.total ?? "—"}</p>
         </div>
         <div className="bg-card p-5">
-          <p className="technical-label">Security events</p>
+          <p className="technical-label">Security events shown</p>
           <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{security?.total ?? "—"}</p>
         </div>
         <div className="bg-card p-5">
@@ -59,7 +59,7 @@ export default async function AuditPage() {
       <Card>
         <CardHeader>
           <CardTitle>Audit log</CardTitle>
-          <CardDescription>Actor and resource trail from GET /api/audit-logs.</CardDescription>
+          <CardDescription>Latest actor and resource window returned by GET /api/audit-logs.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -76,10 +76,10 @@ export default async function AuditPage() {
               {logs?.items.map((log) => (
                 <TableRow key={log.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">{formatDateTime(log.created_at)}</TableCell>
-                  <TableCell><Badge variant="outline">{log.actor}</Badge></TableCell>
+                  <TableCell><Badge variant="outline">{log.actor ?? "unattributed"}</Badge></TableCell>
                   <TableCell>{titleCase(log.action.replaceAll(".", " "))}</TableCell>
                   <TableCell>
-                    <div><p className="text-sm">{titleCase(log.resource_type)}</p><p className="font-mono text-[0.68rem] text-muted-foreground">{log.resource_id}</p></div>
+                    <div><p className="text-sm">{titleCase(log.resource_type ?? "unknown resource")}</p><p className="font-mono text-[0.68rem] text-muted-foreground">{log.resource_id ?? "No resource ID"}</p></div>
                   </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{log.id}</TableCell>
                 </TableRow>
@@ -101,8 +101,8 @@ export default async function AuditPage() {
                 <Badge variant="destructive"><AlertTriangleIcon data-icon="inline-start" />{titleCase(event.event_type)}</Badge>
                 <time className="font-mono text-[0.68rem] text-muted-foreground">{formatDateTime(event.created_at)}</time>
               </div>
-              <p className="mt-3 text-sm leading-relaxed">{event.detail}</p>
-              <p className="mt-2 font-mono text-[0.68rem] text-muted-foreground">{event.resource_id}</p>
+              <p className="mt-3 text-sm leading-relaxed">{event.detail ?? "No event detail was recorded."}</p>
+              <p className="mt-2 font-mono text-[0.68rem] text-muted-foreground">{event.resource_id ?? "No resource ID"}</p>
             </article>
           ))}
           {security && !security.items.length ? <p className="text-sm text-muted-foreground">No security events returned.</p> : null}

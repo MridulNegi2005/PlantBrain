@@ -37,16 +37,55 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000
+const LONG_REQUEST_TIMEOUT_MS = 120_000
+
+function publicErrorMessage(status: number, backendMessage?: string) {
+  if (status >= 400 && status < 500 && backendMessage) return backendMessage
+  if (status === 502 || status === 503 || status === 504) {
+    return "The PlantBrain service is temporarily unavailable."
+  }
+  if (status >= 500) return "The PlantBrain service could not complete the request."
+  return `Request failed with status ${status}`
+}
+
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS
+): Promise<T> {
   const bodyIsFormData = init?.body instanceof FormData
-  const response = await fetch(`${API_URL}${path}`, {
-    cache: "no-store",
-    ...init,
-    headers: {
-      ...(bodyIsFormData ? {} : init?.body ? { "Content-Type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  })
+  const deadline = AbortSignal.timeout(timeoutMs)
+  const signal = init?.signal
+    ? AbortSignal.any([init.signal, deadline])
+    : deadline
+  let response: Response
+
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      cache: "no-store",
+      ...init,
+      signal,
+      headers: {
+        ...(bodyIsFormData ? {} : init?.body ? { "Content-Type": "application/json" } : {}),
+        ...init?.headers,
+      },
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "TimeoutError") {
+      throw new ApiError(
+        "The PlantBrain service did not respond in time.",
+        408,
+        "request_timeout"
+      )
+    }
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    throw new ApiError(
+      "The PlantBrain backend is unavailable.",
+      0,
+      "network_error"
+    )
+  }
 
   if (!response.ok) {
     let payload: ApiErrorShape | undefined
@@ -57,7 +96,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     const backendError = payload?.error ?? payload?.detail?.error
     throw new ApiError(
-      backendError?.message ?? `Request failed with status ${response.status}`,
+      publicErrorMessage(response.status, backendError?.message),
       response.status,
       backendError?.code
     )
@@ -94,13 +133,14 @@ export function uploadDocument(file: File, plantId?: string) {
   return request<UploadedDocument>("/api/documents/upload", {
     method: "POST",
     body: formData,
-  })
+  }, LONG_REQUEST_TIMEOUT_MS)
 }
 
 export function ingestDocument(documentId: string) {
   return request<{ ingestion_job_id: string; status: string }>(
     `/api/documents/${encodeURIComponent(documentId)}/ingest`,
-    { method: "POST" }
+    { method: "POST" },
+    LONG_REQUEST_TIMEOUT_MS
   )
 }
 
@@ -165,7 +205,7 @@ export function getEvaluationCases() {
 export function startEvaluation() {
   return request<{ run_id: string; status: string }>("/api/evaluation/run", {
     method: "POST",
-  })
+  }, LONG_REQUEST_TIMEOUT_MS)
 }
 
 export function getEvaluationRun(runId: string) {

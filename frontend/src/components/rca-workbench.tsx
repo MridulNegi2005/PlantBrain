@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react"
 import { AlertTriangleIcon, SearchCheckIcon, WrenchIcon } from "lucide-react"
 
+import { CitationList } from "@/components/citation-list"
 import { SimilarLessonsPanel } from "@/components/similar-lessons-panel"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -84,13 +85,13 @@ export function RcaWorkbench() {
                 <FieldLabel htmlFor="rca-asset">Asset tag</FieldLabel>
                 <InputGroup>
                   <InputGroupAddon><SearchCheckIcon /></InputGroupAddon>
-                  <InputGroupInput id="rca-asset" value={assetTag} onChange={(event) => setAssetTag(event.target.value.toUpperCase())} />
+                  <InputGroupInput id="rca-asset" value={assetTag} maxLength={64} onChange={(event) => setAssetTag(event.target.value.toUpperCase())} />
                 </InputGroup>
               </Field>
               <Field>
                 <FieldLabel htmlFor="rca-issue">Observed issue</FieldLabel>
                 <InputGroup>
-                  <InputGroupTextarea id="rca-issue" value={issue} onChange={(event) => setIssue(event.target.value)} />
+                  <InputGroupTextarea id="rca-issue" value={issue} maxLength={2_000} onChange={(event) => setIssue(event.target.value)} />
                 </InputGroup>
                 <FieldDescription>Use symptoms and recurrence, not a presumed cause.</FieldDescription>
               </Field>
@@ -101,6 +102,7 @@ export function RcaWorkbench() {
                   <InputGroupInput
                     id="rca-failure-mode"
                     value={failureMode}
+                    maxLength={500}
                     onChange={(event) => setFailureMode(event.target.value)}
                   />
                 </InputGroup>
@@ -155,10 +157,22 @@ export function RcaWorkbench() {
                       <div className="flex flex-wrap gap-2">
                         {cause.evidence.map((item) => <Badge key={item} variant="outline">{item}</Badge>)}
                       </div>
+                      {cause.citations ? <CitationList citations={cause.citations} /> : null}
                     </CardContent>
                   </Card>
                 ))}
               </div>
+              {report.citations?.length ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Investigation evidence</CardTitle>
+                    <CardDescription>Report-level citations returned by the RCA agent.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <CitationList citations={report.citations} />
+                  </CardContent>
+                </Card>
+              ) : null}
               <div className="grid gap-4 lg:grid-cols-2">
                 <Alert>
                   <AlertTriangleIcon />

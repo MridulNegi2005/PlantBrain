@@ -37,7 +37,7 @@ export type DocumentDetail = DocumentSummary & {
 
 export type DocumentChunk = {
   chunk_id: string
-  page: number
+  page: number | null
   text: string
   bbox: {
     x0: number
@@ -81,7 +81,7 @@ export type AssetSummary = {
 
 export type AssetDetail = AssetSummary & {
   plant_id: string
-  summary: string
+  summary: string | null
 }
 
 export type AssetTimelineItem = {
@@ -102,7 +102,7 @@ export type GraphEdge = {
   source: string
   target: string
   type: string
-  confidence: number
+  confidence: number | null
 }
 
 export type KnowledgeGraph = {
@@ -111,8 +111,9 @@ export type KnowledgeGraph = {
 }
 
 export type Citation = {
+  document_id?: string
   document: string
-  page: number
+  page: number | null
   chunk_id?: string
   quote?: string
 }
@@ -132,6 +133,7 @@ export type RcaCause = {
   cause: string
   confidence: number
   evidence: string[]
+  citations?: Citation[]
 }
 
 export type RcaReport = {
@@ -140,6 +142,8 @@ export type RcaReport = {
   likely_causes: RcaCause[]
   missing_checks: string[]
   recommended_actions: string[]
+  citations?: Citation[]
+  graph_path?: string[]
   reason?: string
   note?: string
 }
@@ -150,7 +154,7 @@ export type SimilarIncident = {
   summary: string
   citations: Array<{
     document: string
-    page: number
+    page: number | null
   }>
 }
 
@@ -163,8 +167,10 @@ export type ComplianceReport = {
   requirement: string | null
   status: "ok" | "pass" | "gap" | "unknown"
   evidence_found: string[]
+  citations?: Citation[]
   missing_evidence: string | null
   risk_level: string
+  reason?: string
   note?: string
 }
 
@@ -192,7 +198,8 @@ export type EvaluationRun = {
   id: string
   status: string
   completed_at?: string | null
-  metrics?: EvaluationMetrics
+  metrics?: Partial<EvaluationMetrics>
+  error?: string | null
 }
 
 export type LatestEvaluationRun = {
@@ -200,22 +207,23 @@ export type LatestEvaluationRun = {
   status: string
   completed_at?: string | null
   metrics: Partial<EvaluationMetrics>
+  error?: string | null
 }
 
 export type AuditLog = {
   id: string
-  actor: string
+  actor: string | null
   action: string
-  resource_type: string
-  resource_id: string
+  resource_type: string | null
+  resource_id: string | null
   created_at: string
 }
 
 export type SecurityEvent = {
   id: string
   event_type: string
-  resource_id: string
-  detail: string
+  resource_id: string | null
+  detail: string | null
   created_at: string
 }
 

@@ -51,10 +51,11 @@ describe("PlantBrain API client", () => {
 
     await getHealth()
 
-    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/health`, {
+    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/health`, expect.objectContaining({
       cache: "no-store",
       headers: {},
-    })
+      signal: expect.any(AbortSignal),
+    }))
   })
 
   it("preserves document query parameters", async () => {
@@ -135,12 +136,13 @@ describe("PlantBrain API client", () => {
   ])("serializes the $name request contract", async ({ call, path, body }) => {
     await call()
 
-    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}${path}`, {
+    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}${path}`, expect.objectContaining({
       cache: "no-store",
       method: "POST",
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" },
-    })
+      signal: expect.any(AbortSignal),
+    }))
   })
 
   it("omits an empty optional asset scope from copilot requests", async () => {
@@ -171,11 +173,12 @@ describe("PlantBrain API client", () => {
   it("starts evaluation runs with the documented POST request", async () => {
     await startEvaluation()
 
-    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/api/evaluation/run`, {
+    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/api/evaluation/run`, expect.objectContaining({
       cache: "no-store",
       method: "POST",
       headers: {},
-    })
+      signal: expect.any(AbortSignal),
+    }))
   })
 
   it("surfaces structured backend errors with status and code", async () => {
@@ -228,7 +231,27 @@ describe("PlantBrain API client", () => {
     )
 
     await expect(getDocuments()).rejects.toEqual(
-      new ApiError("Request failed with status 502", 502)
+      new ApiError("The PlantBrain service is temporarily unavailable.", 502)
+    )
+  })
+
+  it("normalizes request timeouts without leaking transport details", async () => {
+    fetchMock.mockRejectedValueOnce(new DOMException("timed out", "TimeoutError"))
+
+    await expect(getHealth()).rejects.toEqual(
+      new ApiError(
+        "The PlantBrain service did not respond in time.",
+        408,
+        "request_timeout"
+      )
+    )
+  })
+
+  it("normalizes network failures without leaking transport details", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("fetch failed: ECONNREFUSED"))
+
+    await expect(getHealth()).rejects.toEqual(
+      new ApiError("The PlantBrain backend is unavailable.", 0, "network_error")
     )
   })
 })

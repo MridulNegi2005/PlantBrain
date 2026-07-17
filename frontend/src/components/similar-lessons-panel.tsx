@@ -62,7 +62,7 @@ export function SimilarLessonsPanel({
                         variant="secondary"
                       >
                         <FileTextIcon data-icon="inline-start" />
-                        {citation.document} · p.{citation.page}
+                        {citation.document} · {citation.page === null ? "page unavailable" : `p.${citation.page}`}
                       </Badge>
                     ))
                   ) : (

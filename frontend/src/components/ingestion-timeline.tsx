@@ -21,9 +21,12 @@ export function IngestionTimeline({ currentIndex, status }: IngestionTimelinePro
     Math.max(currentIndex, -1),
     INGESTION_STATES.length - 1
   )
+  const hasReliableFailureStage = status !== "failed" || currentIndex > 0
   const progress =
     status === "completed"
       ? 100
+      : status === "failed" && !hasReliableFailureStage
+        ? 0
       : Math.max(0, ((boundedIndex + 1) / INGESTION_STATES.length) * 100)
 
   return (
@@ -33,11 +36,17 @@ export function IngestionTimeline({ currentIndex, status }: IngestionTimelinePro
         <ProgressValue />
       </Progress>
 
+      {status === "failed" && !hasReliableFailureStage ? (
+        <p className="text-sm text-destructive">
+          Ingestion failed, but the backend did not identify the failing stage.
+        </p>
+      ) : null}
+
       <ol className="evidence-spine flex flex-col gap-5 pl-8" aria-label="Ingestion stages">
         {INGESTION_STATES.map((state, index) => {
-          const failedHere = status === "failed" && boundedIndex === index
+          const failedHere = status === "failed" && hasReliableFailureStage && boundedIndex === index
           const completed = status === "completed" || (!failedHere && boundedIndex > index)
-          const current = boundedIndex === index && status !== "completed" && !failedHere
+          const current = boundedIndex === index && status !== "completed" && status !== "failed" && !failedHere
 
           return (
             <li

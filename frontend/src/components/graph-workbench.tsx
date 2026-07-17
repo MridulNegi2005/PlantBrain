@@ -125,7 +125,7 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
           <Card>
             <CardHeader>
               <CardTitle>Relationship canvas</CardTitle>
-              <CardDescription>{graph.nodes.length} nodes · {graph.edges.length} provenance-scored edges</CardDescription>
+              <CardDescription>{graph.nodes.length} nodes · {graph.edges.length} relationships; confidence is shown when available</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-hidden rounded-sm border bg-background">
@@ -199,7 +199,9 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                   {connectedEdges.map((edge, index) => (
                     <div key={`${edge.source}-${edge.type}-${index}`}>
                       <div className="py-2">
-                        <Badge variant="outline">{percent(edge.confidence)} confidence</Badge>
+                        <Badge variant="outline">
+                          {edge.confidence == null ? "Confidence not scored" : `${percent(edge.confidence)} confidence`}
+                        </Badge>
                         <p className="mt-2 text-sm font-medium">{titleCase(edge.type)}</p>
                         <p className="mt-1 font-mono text-[0.68rem] leading-relaxed text-muted-foreground">{edge.source} → {edge.target}</p>
                       </div>

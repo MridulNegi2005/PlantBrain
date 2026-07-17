@@ -18,7 +18,8 @@ import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress
 import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
 import { getEvaluationRun, startEvaluation } from "@/lib/api/client"
-import type { EvaluationCase, EvaluationMetrics, EvaluationRun, LatestEvaluationRun } from "@/lib/api/types"
+import type { EvaluationCase, EvaluationMetrics, LatestEvaluationRun } from "@/lib/api/types"
+import { normalizeEvaluationRun, type DisplayEvaluationRun } from "@/lib/evaluation-run"
 import { percent, titleCase } from "@/lib/format"
 
 const metricDefinitions: Array<{ key: keyof EvaluationMetrics; label: string }> = [
@@ -36,23 +37,15 @@ const metricDefinitions: Array<{ key: keyof EvaluationMetrics; label: string }> 
 const EVALUATION_POLL_ATTEMPTS = 30
 const EVALUATION_POLL_INTERVAL_MS = 1000
 
-const completeMetricKeys = [
-  ...metricDefinitions.map((definition) => definition.key),
-  "avg_response_time_sec",
-  "manual_baseline_sec",
-] as const satisfies readonly (keyof EvaluationMetrics)[]
-
-function hydrateLatestRun(latest?: LatestEvaluationRun): EvaluationRun | null {
+function hydrateLatestRun(latest?: LatestEvaluationRun): DisplayEvaluationRun | null {
   if (!latest?.id) return null
-  const hasCompleteMetrics = completeMetricKeys.every(
-    (key) => typeof latest.metrics[key] === "number"
-  )
-  return {
+  return normalizeEvaluationRun({
     id: latest.id,
     status: latest.status,
     completed_at: latest.completed_at,
-    metrics: hasCompleteMetrics ? latest.metrics as EvaluationMetrics : undefined,
-  }
+    metrics: latest.metrics,
+    error: latest.error,
+  })
 }
 
 export function EvaluationWorkbench({
@@ -64,16 +57,16 @@ export function EvaluationWorkbench({
   total: number
   initialRun?: LatestEvaluationRun
 }) {
-  const [run, setRun] = useState<EvaluationRun | null>(() => hydrateLatestRun(initialRun))
+  const [run, setRun] = useState<DisplayEvaluationRun | null>(() => hydrateLatestRun(initialRun))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
   async function refreshRun(runId: string) {
-    const current = await getEvaluationRun(runId)
+    const current = normalizeEvaluationRun(await getEvaluationRun(runId))
     setRun(current)
     if (current.status === "failed") {
-      throw new Error(`Evaluation run ${current.id} failed.`)
+      throw new Error(current.error || `Evaluation run ${current.id} failed.`)
     }
     return current
   }
@@ -135,14 +128,18 @@ export function EvaluationWorkbench({
     ? "No completed run loaded"
     : run.status === "completed" && !run.metrics
       ? "Completed without metrics"
-      : `Evaluation ${run.status}`
+      : run.status === "failed"
+        ? "Evaluation failed"
+        : `Evaluation ${run.status}`
   const statusDescription = !run
     ? "Start the benchmark to retrieve measured extraction, retrieval, citation, compliance, and RAGAS metrics."
     : run.status === "completed" && !run.metrics
       ? `Run ${run.id} completed, but the response did not include a metrics payload.`
-      : busy
-        ? `Run ${run.id} is being monitored. Metrics appear when the backend marks it completed.`
-        : `Run ${run.id} is not being polled automatically. Check its latest backend state when ready.`
+      : run.status === "failed"
+        ? run.error || `Run ${run.id} failed before metrics were produced.`
+        : busy
+          ? `Run ${run.id} is being monitored. Metrics appear when the backend marks it completed.`
+          : `Run ${run.id} is not being polled automatically. Check its latest backend state when ready.`
 
   return (
     <div className="flex flex-col gap-4">

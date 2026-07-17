@@ -10,6 +10,7 @@ import {
   UserIcon,
 } from "lucide-react"
 
+import { CitationList } from "@/components/citation-list"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -252,6 +253,7 @@ export function CopilotWorkbench() {
                   <InputGroupTextarea
                     id="copilot-question"
                     value={question}
+                    maxLength={2_000}
                     onChange={(event) => setQuestion(event.target.value)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" && !event.shiftKey) {
@@ -286,6 +288,7 @@ export function CopilotWorkbench() {
                 <InputGroupTextarea
                   id="asset-scope"
                   value={assetTag}
+                  maxLength={64}
                   onChange={(event) => setAssetTag(event.target.value.toUpperCase())}
                   rows={1}
                   className="min-h-8"
@@ -320,17 +323,8 @@ export function CopilotWorkbench() {
           </SheetHeader>
           <Separator />
           <ScrollArea className="min-h-0 flex-1 px-4">
-            <div className="evidence-spine flex flex-col gap-5 pb-6 pl-7">
-              {selectedEvidence?.citations.map((citation, index) => (
-                <article key={`${citation.document}-${citation.page}-${index}`} className="relative rounded-sm border bg-background p-4 before:absolute before:-left-[1.68rem] before:top-5 before:size-3 before:border-2 before:border-primary before:bg-background">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-medium">{citation.document}</p>
-                    <Badge variant="outline">Page {citation.page}</Badge>
-                  </div>
-                  {citation.quote ? <blockquote className="mt-3 border-l-2 border-primary/60 pl-3 text-sm leading-relaxed text-muted-foreground">“{citation.quote}”</blockquote> : null}
-                  {citation.chunk_id ? <p className="mt-3 font-mono text-[0.68rem] text-muted-foreground">{citation.chunk_id}</p> : null}
-                </article>
-              ))}
+            <div className="pb-6">
+              <CitationList citations={selectedEvidence?.citations ?? []} />
             </div>
             {selectedEvidence?.graphPath.length ? (
               <div className="mb-6 rounded-sm border bg-muted p-4">

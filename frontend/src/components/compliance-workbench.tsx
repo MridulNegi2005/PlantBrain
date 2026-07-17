@@ -3,6 +3,7 @@
 import { FormEvent, useReducer, useState } from "react"
 import { CircleHelpIcon, ClipboardCheckIcon, FileWarningIcon, ShieldCheckIcon } from "lucide-react"
 
+import { CitationList } from "@/components/citation-list"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { StatusBadge } from "@/components/status-badge"
 import { checkCompliance } from "@/lib/api/client"
 import type { ComplianceReport } from "@/lib/api/types"
+import { titleCase } from "@/lib/format"
 import { idleRequestState, requestStateReducer } from "@/lib/request-state"
 
 export function ComplianceWorkbench() {
@@ -63,7 +65,7 @@ export function ComplianceWorkbench() {
                 <FieldLabel htmlFor="compliance-asset">Asset tag</FieldLabel>
                 <InputGroup>
                   <InputGroupAddon><ClipboardCheckIcon /></InputGroupAddon>
-                  <InputGroupInput id="compliance-asset" value={assetTag} onChange={(event) => setAssetTag(event.target.value.toUpperCase())} />
+                  <InputGroupInput id="compliance-asset" value={assetTag} maxLength={64} onChange={(event) => setAssetTag(event.target.value.toUpperCase())} />
                 </InputGroup>
                 <FieldDescription>V-301 is prepared with an intentional certificate gap.</FieldDescription>
               </Field>
@@ -120,6 +122,14 @@ export function ComplianceWorkbench() {
             </Alert>
           ) : null}
 
+          {report.reason ? (
+            <Alert>
+              <CircleHelpIcon />
+              <AlertTitle>Why the result is inconclusive</AlertTitle>
+              <AlertDescription>{titleCase(report.reason)}</AlertDescription>
+            </Alert>
+          ) : null}
+
           <Card>
             <CardHeader>
               <CardTitle>Evidence found</CardTitle>
@@ -129,6 +139,11 @@ export function ComplianceWorkbench() {
               {report.evidence_found.map((evidence) => <Badge key={evidence} variant="outline">{evidence}</Badge>)}
               {!report.evidence_found.length ? <p className="text-sm text-muted-foreground">No supporting evidence was returned.</p> : null}
             </CardContent>
+            {report.citations ? (
+              <CardContent className="border-t border-border pt-4">
+                <CitationList citations={report.citations} />
+              </CardContent>
+            ) : null}
           </Card>
         </div>
       ) : (
