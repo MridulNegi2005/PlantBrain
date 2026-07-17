@@ -19,8 +19,8 @@ def list_cases(db: Session = Depends(get_db)):
     return {"items": items, "total": len(items)}
 
 
-def _run_bg(run_id: str):
-    db = SessionLocal()
+def _run_bg(run_id: str, bind=None):
+    db = SessionLocal() if bind is None else Session(bind=bind)
     try:
         run = db.get(models.EvaluationRun, run_id)
         if run:
@@ -34,7 +34,7 @@ def run_evaluation(background_tasks: BackgroundTasks, db: Session = Depends(get_
     run = models.EvaluationRun(id=gen_id("eval"), status="running")
     db.add(run)
     db.commit()
-    background_tasks.add_task(_run_bg, run.id)
+    background_tasks.add_task(_run_bg, run.id, db.get_bind())
     return {"run_id": run.id, "status": run.status}
 
 

@@ -27,6 +27,7 @@ pypdf==6.13.3
 
 # Interval 3: knowledge graph
 networkx==3.4.2
+rank-bm25==0.2.2          # zero-config SQLite retrieval fallback for local demos
 
 # Testing
 pytest==9.0.3

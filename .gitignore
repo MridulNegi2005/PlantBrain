@@ -32,6 +32,7 @@ build/
 # Uploads & local artifacts
 uploads/
 *.log
+*.db
 
 # Large raw data blobs (keep small samples only; document source in data/raw/README.md)
 data/raw/**/*.zip

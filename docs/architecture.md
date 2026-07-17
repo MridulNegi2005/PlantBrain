@@ -44,11 +44,11 @@ flowchart TB
 ## Two-phase data flow
 
 **Ingestion (server-side, once per document)**
-`Document → extract (PyMuPDF) → chunk (page-aware, overlap) → embed (fastembed, 384-d)
-→ store in pgvector → build knowledge graph (assets/failures/components + provenance)`
+`Document → extract (PyMuPDF) → chunk (page-aware, overlap) → optional embed
+(fastembed, 384-d on pgvector) → build knowledge graph (assets/failures/components + provenance)`
 
 **Query (real time)**
-`Question → embed → pgvector similarity + graph expansion (shared failure modes)
+`Question → pgvector similarity (Postgres) or BM25 (local SQLite) + graph expansion (shared failure modes)
 → no-source-no-answer guardrail → LLM cited synthesis → answer + citations + graph path
 + confidence + missing evidence + next actions`
 
@@ -59,17 +59,19 @@ flowchart TB
 | Frontend | Next.js + Tailwind + shadcn/ui | Dashboard, copilot chat, graph viewer, evidence drawer |
 | API | FastAPI | REST; background tasks for ingestion + evaluation |
 | Ingestion | `app/ingestion/*` | PyMuPDF text+tables, pandas CSV/XLSX, optional OCR, chunker, embeddings |
-| Retrieval | `app/rag/retriever.py` | pgvector cosine search fused with NetworkX graph traversal |
+| Retrieval | `app/rag/retriever.py` | pgvector cosine search or BM25 fallback, fused with NetworkX graph traversal |
 | Knowledge graph | `app/graph/*` | Rule-based, deterministic; Asset/Document/FailureMode/Component (ISO-15926 flavour), provenance on every edge |
 | LLM | `app/llm/client.py` | OpenAI-compatible; Groq default, swap to local Ollama via env only |
 | Agents | `app/agents/*` | RCA, compliance-gap, lessons — same guardrailed engine |
 | Evaluation | `app/evaluation/harness.py` | Retrieval/citation/RAGAS-style/entity/compliance metrics from real runs |
 | Security | `app/security/injection.py` | Prompt-injection scan → SecurityEvent; audit log on actions |
-| Storage | PostgreSQL + pgvector | Relational + vectors in one DB (self-hosted on a cloud VM) |
+| Storage | PostgreSQL + pgvector / SQLite | Production-like semantic store or zero-config local demo |
 
 ## Why this design
 - **One datastore (Postgres + pgvector)** holds relational data *and* embeddings — simpler
   than bolting on a separate vector DB, and a genuine production topology.
+- **SQLite + BM25 fallback** keeps setup and judging resilient when external database or
+  model-download access is unavailable; API shapes and evidence rules stay identical.
 - **Deterministic knowledge graph** — no hallucinated edges; the LLM is used only for
   language (answer synthesis), never for structural facts.
 - **Provider-agnostic LLM** — free Groq now, private on-prem Ollama for confidential plant

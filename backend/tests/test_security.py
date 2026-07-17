@@ -40,7 +40,7 @@ def test_evaluation_cases_and_run(client, monkeypatch):
     # mock the harness so we don't call the LLM in tests
     import app.api.evaluation as eval_api
 
-    def fake_run_bg(run_id):
+    def fake_run_bg(run_id, bind=None):
         d = next(client.app.dependency_overrides[get_db]())
         run = d.get(models.EvaluationRun, run_id)
         run.status = "completed"

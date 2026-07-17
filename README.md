@@ -12,32 +12,34 @@ ET AI Hackathon 2026 — Problem Statement 8 (AI for Industrial Knowledge Intell
 - `main` — integration branch, merged at defined intervals. Don't push directly to `main`.
 
 ## Backend setup
-```bash
+```powershell
 cd backend
 python -m venv .venv
-source .venv/Scripts/activate        # Windows Git Bash; use .venv\Scripts\activate.bat for cmd.exe
-pip install -r requirements.txt
-cp .env.example .env                  # fill in POSTGRES_* (hosted Postgres). No API key needed.
+\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
 
-python -m scripts.db_bootstrap        # creates the plantbrain DB, tables (+ pgvector column), seeds assets
-python -m scripts.generate_corpus     # writes the synthetic demo corpus into ../data/synthetic
-python -m scripts.load_corpus         # registers the corpus as documents in Postgres
-python -m scripts.ingest_corpus       # extract -> chunk -> embed all docs into pgvector
-python -m scripts.build_graph         # build the knowledge graph (nodes/edges/entities)
+# Choose one database mode in .env:
+# Local demo: DATABASE_URL=sqlite:///./plantbrain.db
+# Production-like: leave DATABASE_URL empty and fill POSTGRES_* (pgvector required)
+
+python -m scripts.db_bootstrap        # creates tables and seeds the demo plant/assets
+python -m scripts.load_corpus         # registers the committed synthetic corpus
+python -m scripts.ingest_corpus       # extract -> chunk -> retrieval index -> graph
 python -m scripts.run_eval            # (optional) run the eval harness, store metrics
 
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000
 ```
-No Docker required — the app connects directly to a hosted Postgres instance built from the `POSTGRES_*`
-vars in `.env`. Visit `http://localhost:8000/docs` for interactive API docs, or `http://localhost:8000/health`
-to check DB + pgvector status. Embeddings are stored in Postgres via **pgvector** (bge-small, 384-dim, via
-fastembed — local and free). The first `ingest_corpus`/embed call downloads the ONNX model once (~100MB, cached).
+No Docker is required. SQLite + BM25 is the zero-config demo path; hosted Postgres + pgvector is the
+production-like semantic retrieval path. Visit `http://localhost:8000/docs` for interactive API docs, or
+`http://localhost:8000/health` to check DB + pgvector status. On Postgres, embeddings use local fastembed
+(bge-small, 384 dimensions); the first embedding call downloads the ONNX model once (~100MB, cached).
 
 The cited copilot uses an **OpenAI-compatible LLM** (Groq free tier by default — set `LLM_API_KEY` in `.env`;
 or point `LLM_BASE_URL` at a local Ollama). Without a key it falls back to extractive cited answers.
 Embeddings are local/free (fastembed).
 
-Run tests: `python -m pytest tests/ -q` (10 passing, hermetic — uses in-memory SQLite, never the hosted DB).
+Run tests: `python -m pytest tests/ -q` (hermetic in-memory SQLite; never touches the hosted DB).
 
 ## Frontend setup
 ```bash
@@ -46,9 +48,10 @@ npm install
 cp .env.example .env.local
 npm run dev
 ```
-Build against `docs/api-contract.md` — every endpoint is live right now as a stub returning realistic fixture
-data, so the full frontend can be built before real backend logic lands.
+Build against `docs/api-contract.md`. The backend returns persisted evidence and explicit empty/unknown states;
+it does not fabricate fixture evidence.
 
 ## Status
-Interval 0 complete: repo scaffold, mock API contract + stub FastAPI, DB wiring. See
-`.ai-sync/handoff.md` for the current handoff state between agents/sessions.
+Integrated prototype: document ingestion, cited retrieval, knowledge graph, RCA/compliance/lessons agents,
+evaluation harness, audit/security events, synthetic corpus, and the operations frontend are implemented.
+LLM synthesis is optional; without a key, evidence-backed extractive fallbacks remain available.

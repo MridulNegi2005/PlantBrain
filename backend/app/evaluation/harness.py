@@ -112,15 +112,16 @@ def _entity_prf(db: Session) -> tuple[float, float]:
                 for e in g["entities"] if e["type"] == "asset_tag"}
     if not expected:
         return 0.0, 0.0
-    # extracted asset tags = asset_tags on the documents matching those gold docs
-    found = set()
-    for doc_stem, tag in expected:
+    # Compare all predicted tags on gold documents, including false positives.
+    predicted = set()
+    for doc_stem in {doc_stem for doc_stem, _ in expected}:
         doc = db.query(models.Document).filter(
             models.Document.filename.like(f"{doc_stem}%")).first()
-        if doc and tag in (doc.asset_tags or []):
-            found.add((doc_stem, tag))
-    precision = len(found) / len(found) if found else 0.0  # no false positives by construction
-    recall = len(found) / len(expected)
+        if doc:
+            predicted.update((doc_stem, tag) for tag in (doc.asset_tags or []))
+    correct = expected & predicted
+    precision = len(correct) / len(predicted) if predicted else 0.0
+    recall = len(correct) / len(expected)
     return round(precision, 3), round(recall, 3)
 
 

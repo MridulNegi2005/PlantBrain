@@ -39,9 +39,20 @@ def test_compliance_extractive(monkeypatch):
     assert "status" in c and "risk_level" in c
 
 
+def test_compliance_llm_status_is_normalized(monkeypatch):
+    monkeypatch.setattr(compliance.llm, "chat_json", lambda *a, **k: {
+        "requirement": "Inspection certificate",
+        "status": "ok",
+        "evidence_found": [1],
+        "missing_evidence": None,
+        "risk_level": "low",
+    })
+    result = compliance._llm_check("V-301", EVIDENCE)
+    assert result["status"] == "pass"
+
+
 def test_lessons_filters_incidents(monkeypatch):
-    monkeypatch.setattr(lessons, "embed_query", lambda q: [0.0])
-    monkeypatch.setattr(lessons, "search", lambda db, v, k=12: EVIDENCE)
+    monkeypatch.setattr(lessons, "search_query", lambda db, query, k=12: EVIDENCE)
     out = lessons.similar(None, "seal leakage")
     ids = {it["incident_id"] for it in out["items"]}
     assert "INC-08" in ids  # only incident_report docs, WO-141 excluded

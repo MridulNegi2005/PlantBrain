@@ -5,8 +5,8 @@ Run once after filling backend/.env (safe to re-run):
 
 Connects to the 'postgres' maintenance database to create the target DB (CREATE
 DATABASE cannot run inside a transaction), then enables pgvector in the target.
-If pgvector is not installed on the server, it reports that so we fall back to an
-embedded vector store (Chroma) for Interval 2 rather than failing.
+If pgvector is not installed on the server, retrieval falls back to BM25 rather
+than failing startup.
 """
 
 import sys
@@ -25,6 +25,18 @@ def _conninfo(dbname: str) -> str:
 
 
 def main() -> int:
+    if settings.database_url.startswith("sqlite"):
+        from app.db import models  # noqa: F401
+        from app.db.base import Base
+        from app.db.seed import seed
+        from app.db.session import engine
+
+        Base.metadata.create_all(bind=engine)
+        seed()
+        print(f"SQLite database ready -> {settings.database_url}")
+        print(f"tables created ({len(Base.metadata.tables)} tables); seeded demo plant + assets")
+        return 0
+
     target = settings.postgres_db
 
     try:
@@ -52,7 +64,7 @@ def main() -> int:
             print(f"pgvector enabled (version {ver[0]})")
         except Exception as exc:
             print(f"pgvector NOT available: {exc}")
-            print("=> Interval 2 will use the Chroma embedded-vector fallback.")
+            print("=> Retrieval will use the BM25 fallback.")
 
     # Create tables and seed the demo plant/assets (imported here so a bad DATABASE_URL
     # fails at the connection step above, not at import time).
