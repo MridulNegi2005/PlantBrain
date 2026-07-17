@@ -144,7 +144,7 @@ export function UploadWorkbench() {
                 id="evidence-file"
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx,.txt"
-                className="sr-only"
+                className="hidden"
                 aria-invalid={Boolean(error)}
                 onChange={(event) => chooseFile(event.target.files?.[0])}
               />
