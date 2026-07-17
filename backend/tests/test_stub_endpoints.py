@@ -100,7 +100,20 @@ def test_upload_rejects_corrupt_pdf(client):
 def test_validation_errors_use_contract_envelope(client):
     resp = client.post("/api/copilot/ask", json={})
     assert resp.status_code == 422
-    assert resp.json()["error"]["code"] == "validation_error"
+    error = resp.json()["error"]
+    assert error["code"] == "validation_error"
+    assert all("input" not in detail and "ctx" not in detail for detail in error["details"])
+
+
+def test_health_is_degraded_when_database_is_unavailable(client, monkeypatch):
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "check_connection", lambda: False)
+    resp = client.get("/health")
+    assert resp.status_code == 503
+    assert resp.json() == {
+        "status": "degraded", "db_connected": False, "pgvector_enabled": False,
+    }
 
 
 def test_upload_writes_audit_log(client):
@@ -111,3 +124,19 @@ def test_upload_writes_audit_log(client):
     logs = client.get("/api/audit-logs").json()
     actions = {log["action"] for log in logs["items"]}
     assert "document.upload" in actions
+
+
+def test_audit_total_is_not_capped_and_timestamp_is_utc(client):
+    from app.db.crud import write_audit
+    from app.db.session import get_db
+
+    db = next(client.app.dependency_overrides[get_db]())
+    for index in range(205):
+        write_audit(db, action=f"test.{index}")
+    db.commit()
+
+    body = client.get("/api/audit-logs").json()
+    assert body["total"] == 205
+    assert len(body["items"]) == 200
+    assert body["items"][0]["created_at"].endswith("Z")
+    assert body["items"][0]["actor"] == "system"

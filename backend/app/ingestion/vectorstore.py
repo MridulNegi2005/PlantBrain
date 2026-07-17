@@ -12,6 +12,8 @@ import re
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+
 
 def _literal(vec: list[float]) -> str:
     return "[" + ",".join(f"{x:.6f}" for x in vec) + "]"
@@ -92,7 +94,7 @@ def _bm25_search(db: Session, query: str, *, k: int,
         models.Document, models.Document.id == models.Chunk.document_id)
     if document_id:
         q = q.filter(models.Chunk.document_id == document_id)
-    rows = q.all()
+    rows = q.limit(settings.max_bm25_chunks).all()
     if asset_tag:
         rows = [(chunk, doc) for chunk, doc in rows
                 if asset_tag in (chunk.asset_tags or doc.asset_tags or [])]
@@ -102,8 +104,10 @@ def _bm25_search(db: Session, query: str, *, k: int,
         return []
 
     raw_scores = BM25Plus(corpus).get_scores(query_tokens)
-    ranked = sorted(zip(rows, raw_scores), key=lambda item: float(item[1]), reverse=True)
-    positive = [item for item in ranked if float(item[1]) > 0][:k]
+    ranked = sorted(zip(rows, corpus, raw_scores), key=lambda item: float(item[2]), reverse=True)
+    query_terms = set(query_tokens)
+    positive = [((row, score)) for row, tokens, score in ranked
+                if float(score) > 0 and query_terms.intersection(tokens)][:k]
     max_score = float(positive[0][1]) if positive else 0.0
     return [{
         "chunk_id": chunk.id,

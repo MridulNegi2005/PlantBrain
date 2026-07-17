@@ -21,10 +21,12 @@ async def http_error(_request: Request, exc: HTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(_request: Request, exc: RequestValidationError):
+    details = [{key: error[key] for key in ("loc", "type", "msg") if key in error}
+               for error in exc.errors()]
     return JSONResponse(status_code=422, content={"error": {
         "code": "validation_error",
         "message": "Request validation failed.",
-        "details": exc.errors(),
+        "details": details,
     }})
 
 app.add_middleware(
@@ -46,4 +48,9 @@ app.include_router(admin.router)
 def health():
     db_connected = check_connection()
     pgvector_enabled = pgvector_available() if db_connected else False
-    return {"status": "ok", "db_connected": db_connected, "pgvector_enabled": pgvector_enabled}
+    payload = {
+        "status": "ok" if db_connected else "degraded",
+        "db_connected": db_connected,
+        "pgvector_enabled": pgvector_enabled,
+    }
+    return payload if db_connected else JSONResponse(status_code=503, content=payload)

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.agents import compliance as compliance_agent
@@ -13,21 +13,21 @@ router = APIRouter(prefix="/api", tags=["agents"])
 
 
 class CopilotQuestion(BaseModel):
-    question: str
-    asset_tag: str | None = None
+    question: str = Field(min_length=1, max_length=4_000)
+    asset_tag: str | None = Field(default=None, max_length=64)
 
 
 class RCARequest(BaseModel):
-    asset_tag: str
-    issue: str
+    asset_tag: str = Field(min_length=1, max_length=64)
+    issue: str = Field(min_length=1, max_length=4_000)
 
 
 class ComplianceRequest(BaseModel):
-    asset_tag: str
+    asset_tag: str = Field(min_length=1, max_length=64)
 
 
 class SimilarLessonsRequest(BaseModel):
-    failure_mode: str
+    failure_mode: str = Field(min_length=1, max_length=1_000)
 
 
 @router.post("/copilot/ask")

@@ -6,7 +6,7 @@ from app.db import models
 from app.db.base import gen_id
 
 
-def write_audit(db: Session, *, action: str, actor: str | None = None,
+def write_audit(db: Session, *, action: str, actor: str | None = "system",
                 resource_type: str | None = None, resource_id: str | None = None,
                 meta: dict | None = None) -> None:
     db.add(models.AuditLog(

@@ -51,6 +51,30 @@ def test_compliance_llm_status_is_normalized(monkeypatch):
     assert result["status"] == "pass"
 
 
+def test_compliance_cannot_pass_without_valid_evidence(monkeypatch):
+    monkeypatch.setattr(compliance.llm, "chat_json", lambda *a, **k: {
+        "requirement": "Inspection certificate",
+        "status": "pass",
+        "evidence_found": [999],
+        "missing_evidence": None,
+        "risk_level": "low",
+    })
+    result = compliance._llm_check("V-301", EVIDENCE)
+    assert result["status"] == "unknown"
+    assert result["citations"] == []
+
+
+def test_rca_drops_uncited_model_causes(monkeypatch):
+    monkeypatch.setattr(rca.llm, "chat_json", lambda *a, **k: {
+        "likely_causes": [{"cause": "Fabricated", "confidence": 0.9, "evidence": [999]}],
+        "missing_checks": [],
+        "recommended_actions": [],
+    })
+    result = rca._llm_rca("P-204A", "failure", EVIDENCE, [])
+    assert result["likely_causes"] == []
+    assert result["reason"] == "no_supporting_evidence"
+
+
 def test_lessons_filters_incidents(monkeypatch):
     monkeypatch.setattr(lessons, "search_query", lambda db, query, k=12: EVIDENCE)
     out = lessons.similar(None, "seal leakage")
@@ -71,3 +95,8 @@ def test_agent_endpoints(client, monkeypatch):
     assert client.post("/api/rca/generate", json={"asset_tag": "P-204A", "issue": "y"}).status_code == 200
     assert client.post("/api/compliance/check", json={"asset_tag": "V-301"}).status_code == 200
     assert client.post("/api/lessons/similar", json={"failure_mode": "seal leakage"}).status_code == 200
+
+
+def test_agent_request_lengths_are_bounded(client):
+    response = client.post("/api/copilot/ask", json={"question": "x" * 4_001})
+    assert response.status_code == 422

@@ -34,7 +34,7 @@ def _quote(text: str, n: int = 160) -> str:
 
 
 def _citation(hit: dict) -> dict:
-    return {"document": hit["filename"], "page": hit["page"],
+    return {"document": hit["filename"], "document_id": hit["document_id"], "page": hit["page"],
             "chunk_id": hit["chunk_id"], "quote": _quote(hit["text"])}
 
 
@@ -49,7 +49,11 @@ def answer(db: Session, question: str, *, asset_tag: str | None = None) -> dict:
     # Untrusted-document defense: log any injection attempt in the retrieved text.
     # The LLM system prompt still instructs the model to ignore such instructions.
     from app.security.injection import check_evidence
-    check_evidence(db, evidence)
+    if check_evidence(db, evidence):
+        return {"answer": None, "reason": "unsafe_evidence", "citations": [],
+                "confidence": 0.0, "graph_path": result["graph_path"],
+                "missing_evidence": ["Retrieved evidence contained embedded instructions."],
+                "recommended_next_actions": []}
 
     if llm.available():
         try:
@@ -68,16 +72,15 @@ def _llm_answer(question: str, evidence: list[dict], graph_path: list[str]) -> d
                           {"role": "user", "content": user}], temperature=0.1)
 
     idxs = [i for i in data.get("citations", []) if isinstance(i, int) and 1 <= i <= len(evidence)]
-    citations = [_citation(evidence[i - 1]) for i in idxs] or [_citation(evidence[0])]
     ans = data.get("answer")
-    if not ans:
+    if not ans or not idxs:
         return {"answer": None, "reason": "no_supporting_evidence", "citations": [],
                 "confidence": 0.0, "graph_path": graph_path, "missing_evidence": [],
                 "recommended_next_actions": []}
     return {
         "answer": ans,
         "confidence": float(data.get("confidence", 0.7)),
-        "citations": citations,
+        "citations": [_citation(evidence[i - 1]) for i in idxs],
         "graph_path": graph_path,
         "missing_evidence": data.get("missing_evidence", []),
         "recommended_next_actions": data.get("recommended_next_actions", []),

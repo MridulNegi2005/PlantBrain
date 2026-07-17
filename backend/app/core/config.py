@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me-in-production"
     cors_origins: str = "http://localhost:3000"
     max_upload_mb: int = 20
+    max_bm25_chunks: int = 5_000
 
     @property
     def sqlalchemy_url(self) -> URL | str:

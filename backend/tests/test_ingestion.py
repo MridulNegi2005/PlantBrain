@@ -120,3 +120,32 @@ def test_sqlite_bm25_retrieval_is_asset_scoped(client):
     hits = search_query(db, "seal leakage", asset_tag="P-204A")
     assert hits and hits[0]["filename"] == "pump.txt"
     assert all(hit["score"] <= 1.0 for hit in hits)
+
+
+def test_sqlite_bm25_excludes_zero_overlap_documents(client):
+    from app.db import models
+    from app.db.base import gen_id
+    from app.db.session import get_db
+    from app.ingestion.vectorstore import search_query
+
+    db = next(client.app.dependency_overrides[get_db]())
+    docs = [
+        models.Document(id=gen_id("doc"), plant_id="shakti-petrochem-unit-2",
+                        filename="seal.txt", status="completed", hash_sha256="c" * 64,
+                        asset_tags=["P-204A"]),
+        models.Document(id=gen_id("doc"), plant_id="shakti-petrochem-unit-2",
+                        filename="pressure.txt", status="completed", hash_sha256="d" * 64,
+                        asset_tags=["P-204A"]),
+    ]
+    db.add_all(docs)
+    db.flush()
+    db.add_all([
+        models.Chunk(id=gen_id("chunk"), document_id=docs[0].id, page_number=1,
+                     text="pump seal", asset_tags=["P-204A"]),
+        models.Chunk(id=gen_id("chunk"), document_id=docs[1].id, page_number=1,
+                     text="vessel pressure", asset_tags=["P-204A"]),
+    ])
+    db.commit()
+
+    hits = search_query(db, "seal", asset_tag="P-204A")
+    assert [hit["filename"] for hit in hits] == ["seal.txt"]

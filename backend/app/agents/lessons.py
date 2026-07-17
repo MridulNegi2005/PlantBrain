@@ -11,6 +11,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.ingestion.vectorstore import search_query
+from app.rag.copilot import _citation
 
 
 def _quote(text: str, n: int = 220) -> str:
@@ -24,6 +25,6 @@ def similar(db: Session, failure_mode: str, *, limit: int = 5) -> dict:
         "incident_id": Path(h["filename"]).stem,
         "similarity": round(h["score"], 3),
         "summary": _quote(h["text"]),
-        "citations": [{"document": h["filename"], "page": h["page"]}],
+        "citations": [_citation(h)],
     } for h in incidents]
     return {"items": items}

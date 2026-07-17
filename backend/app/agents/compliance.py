@@ -36,6 +36,12 @@ def check(db: Session, asset_tag: str) -> dict:
                 "evidence_found": [], "missing_evidence": None, "risk_level": "low",
                 "reason": "no_supporting_evidence"}
 
+    from app.security.injection import check_evidence
+    if check_evidence(db, evidence):
+        return {"asset": asset_tag, "requirement": None, "status": "unknown",
+                "evidence_found": [], "citations": [], "missing_evidence": None,
+                "risk_level": "low", "reason": "unsafe_evidence"}
+
     if llm.available():
         try:
             return _llm_check(asset_tag, evidence)
@@ -56,6 +62,8 @@ def _llm_check(asset_tag: str, evidence: list[dict]) -> dict:
     if status == "ok":  # tolerate older providers, but normalize the API contract
         status = "pass"
     if status not in {"pass", "gap"}:
+        status = "unknown"
+    if not idxs:
         status = "unknown"
     return {
         "asset": asset_tag,
