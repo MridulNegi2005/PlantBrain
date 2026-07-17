@@ -1,0 +1,7 @@
+timestamp,asset_tag,metric,value,unit
+2026-06-01,V-301,shell_pressure_barg,8.1,barg
+2026-06-06,V-301,shell_pressure_barg,8.0,barg
+2026-06-11,V-301,shell_pressure_barg,8.2,barg
+2026-06-16,V-301,shell_pressure_barg,8.1,barg
+2026-06-21,V-301,shell_pressure_barg,8.0,barg
+2026-06-26,V-301,shell_pressure_barg,8.1,barg

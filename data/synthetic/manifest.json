@@ -1,0 +1,351 @@
+[
+  {
+    "filename": "manuals/OEM-PUMP-02.pdf",
+    "doc_type": "manual",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "manuals/OEM-HX-01.pdf",
+    "doc_type": "manual",
+    "asset_tags": [
+      "HX-102"
+    ]
+  },
+  {
+    "filename": "manuals/OEM-COMP-03.pdf",
+    "doc_type": "manual",
+    "asset_tags": [
+      "C-110"
+    ]
+  },
+  {
+    "filename": "manuals/OEM-PV-04.pdf",
+    "doc_type": "manual",
+    "asset_tags": [
+      "V-301"
+    ]
+  },
+  {
+    "filename": "manuals/OEM-TK-05.pdf",
+    "doc_type": "manual",
+    "asset_tags": [
+      "TK-501"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-129.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-141.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-133.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "HX-102"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-137.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "C-110"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-150.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "TK-501"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-118.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-145.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "HX-102"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-152.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "C-110"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-160.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "V-301"
+    ]
+  },
+  {
+    "filename": "work_orders/WO-108.pdf",
+    "doc_type": "work_order",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "work_orders/work_order_register.csv",
+    "doc_type": "work_order_register",
+    "asset_tags": [
+      "C-110",
+      "HX-102",
+      "P-204A",
+      "TK-501",
+      "V-301"
+    ]
+  },
+  {
+    "filename": "inspections/IR-17.pdf",
+    "doc_type": "inspection_report",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "inspections/IR-22.pdf",
+    "doc_type": "inspection_report",
+    "asset_tags": [
+      "V-301"
+    ]
+  },
+  {
+    "filename": "inspections/IR-19.pdf",
+    "doc_type": "inspection_report",
+    "asset_tags": [
+      "HX-102"
+    ]
+  },
+  {
+    "filename": "inspections/IR-20.pdf",
+    "doc_type": "inspection_report",
+    "asset_tags": [
+      "C-110"
+    ]
+  },
+  {
+    "filename": "inspections/IR-25.pdf",
+    "doc_type": "inspection_report",
+    "asset_tags": [
+      "TK-501"
+    ]
+  },
+  {
+    "filename": "inspections/IR-30.pdf",
+    "doc_type": "inspection_report",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "inspections/IR-31.pdf",
+    "doc_type": "inspection_report",
+    "asset_tags": [
+      "HX-102"
+    ]
+  },
+  {
+    "filename": "inspections/IR-33.pdf",
+    "doc_type": "inspection_report",
+    "asset_tags": [
+      "V-301"
+    ]
+  },
+  {
+    "filename": "incidents/INC-08.pdf",
+    "doc_type": "incident_report",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "incidents/INC-11.pdf",
+    "doc_type": "incident_report",
+    "asset_tags": [
+      "C-110"
+    ]
+  },
+  {
+    "filename": "incidents/INC-14.pdf",
+    "doc_type": "incident_report",
+    "asset_tags": [
+      "TK-501"
+    ]
+  },
+  {
+    "filename": "incidents/INC-16.pdf",
+    "doc_type": "incident_report",
+    "asset_tags": [
+      "HX-102"
+    ]
+  },
+  {
+    "filename": "incidents/INC-20.pdf",
+    "doc_type": "incident_report",
+    "asset_tags": [
+      "V-301"
+    ]
+  },
+  {
+    "filename": "incidents/INC-22.pdf",
+    "doc_type": "incident_report",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "sops/SOP-17.pdf",
+    "doc_type": "sop",
+    "asset_tags": []
+  },
+  {
+    "filename": "sops/SOP-22.pdf",
+    "doc_type": "sop",
+    "asset_tags": []
+  },
+  {
+    "filename": "sops/SOP-30.pdf",
+    "doc_type": "sop",
+    "asset_tags": []
+  },
+  {
+    "filename": "sops/SOP-08.pdf",
+    "doc_type": "sop",
+    "asset_tags": []
+  },
+  {
+    "filename": "sops/SOP-12.pdf",
+    "doc_type": "sop",
+    "asset_tags": []
+  },
+  {
+    "filename": "sops/SOP-15.pdf",
+    "doc_type": "sop",
+    "asset_tags": []
+  },
+  {
+    "filename": "sops/SOP-40.pdf",
+    "doc_type": "sop",
+    "asset_tags": []
+  },
+  {
+    "filename": "sops/SOP-45.pdf",
+    "doc_type": "sop",
+    "asset_tags": []
+  },
+  {
+    "filename": "safety/SAFE-01.pdf",
+    "doc_type": "safety_procedure",
+    "asset_tags": []
+  },
+  {
+    "filename": "safety/SAFE-02.pdf",
+    "doc_type": "safety_procedure",
+    "asset_tags": []
+  },
+  {
+    "filename": "safety/SAFE-03.pdf",
+    "doc_type": "safety_procedure",
+    "asset_tags": []
+  },
+  {
+    "filename": "safety/SAFE-04.pdf",
+    "doc_type": "safety_procedure",
+    "asset_tags": []
+  },
+  {
+    "filename": "safety/SAFE-05.pdf",
+    "doc_type": "safety_procedure",
+    "asset_tags": []
+  },
+  {
+    "filename": "compliance/CMP-01.pdf",
+    "doc_type": "compliance_checklist",
+    "asset_tags": [
+      "V-301"
+    ]
+  },
+  {
+    "filename": "compliance/CMP-02.pdf",
+    "doc_type": "compliance_checklist",
+    "asset_tags": [
+      "C-110"
+    ]
+  },
+  {
+    "filename": "compliance/CMP-03.pdf",
+    "doc_type": "compliance_checklist",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "compliance/CMP-04.pdf",
+    "doc_type": "compliance_checklist",
+    "asset_tags": [
+      "TK-501"
+    ]
+  },
+  {
+    "filename": "compliance/CMP-05.pdf",
+    "doc_type": "compliance_checklist",
+    "asset_tags": [
+      "V-301"
+    ]
+  },
+  {
+    "filename": "sensor_logs/P-204A_sensor.csv",
+    "doc_type": "sensor_log",
+    "asset_tags": [
+      "P-204A"
+    ]
+  },
+  {
+    "filename": "sensor_logs/HX-102_sensor.csv",
+    "doc_type": "sensor_log",
+    "asset_tags": [
+      "HX-102"
+    ]
+  },
+  {
+    "filename": "sensor_logs/C-110_sensor.csv",
+    "doc_type": "sensor_log",
+    "asset_tags": [
+      "C-110"
+    ]
+  },
+  {
+    "filename": "sensor_logs/V-301_sensor.csv",
+    "doc_type": "sensor_log",
+    "asset_tags": [
+      "V-301"
+    ]
+  },
+  {
+    "filename": "sensor_logs/TK-501_sensor.csv",
+    "doc_type": "sensor_log",
+    "asset_tags": [
+      "TK-501"
+    ]
+  }
+]

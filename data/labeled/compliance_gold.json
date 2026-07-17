@@ -1,0 +1,20 @@
+[
+  {
+    "asset": "V-301",
+    "requirement": "Valid hydrostatic pressure-test certificate",
+    "expected_status": "gap",
+    "risk_level": "high"
+  },
+  {
+    "asset": "P-204A",
+    "requirement": "Post-maintenance verification recorded on closeout",
+    "expected_status": "gap",
+    "risk_level": "medium"
+  },
+  {
+    "asset": "C-110",
+    "requirement": "Relief-valve pop test within interval",
+    "expected_status": "ok",
+    "risk_level": "low"
+  }
+]

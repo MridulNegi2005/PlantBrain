@@ -1,0 +1,36 @@
+[
+  {
+    "doc": "WO-141",
+    "entities": [
+      {
+        "type": "asset_tag",
+        "value": "P-204A"
+      },
+      {
+        "type": "component",
+        "value": "mechanical seal"
+      },
+      {
+        "type": "failure_mode",
+        "value": "missing post-repair test"
+      }
+    ]
+  },
+  {
+    "doc": "IR-17",
+    "entities": [
+      {
+        "type": "asset_tag",
+        "value": "P-204A"
+      },
+      {
+        "type": "measurement",
+        "value": "6.2 mm/s"
+      },
+      {
+        "type": "failure_mode",
+        "value": "abnormal vibration"
+      }
+    ]
+  }
+]

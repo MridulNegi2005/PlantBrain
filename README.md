@@ -15,16 +15,29 @@ ET AI Hackathon 2026 — Problem Statement 8 (AI for Industrial Knowledge Intell
 ```bash
 cd backend
 python -m venv .venv
-source .venv/Scripts/activate   # Windows Git Bash; use .venv\Scripts\activate.bat for cmd.exe
+source .venv/Scripts/activate        # Windows Git Bash; use .venv\Scripts\activate.bat for cmd.exe
 pip install -r requirements.txt
-cp .env.example .env            # then fill in DATABASE_URL (hosted Postgres) + ANTHROPIC_API_KEY
+cp .env.example .env                  # fill in POSTGRES_* (hosted Postgres). No API key needed.
+
+python -m scripts.db_bootstrap        # creates the plantbrain DB, tables (+ pgvector column), seeds assets
+python -m scripts.generate_corpus     # writes the synthetic demo corpus into ../data/synthetic
+python -m scripts.load_corpus         # registers the corpus as documents in Postgres
+python -m scripts.ingest_corpus       # extract -> chunk -> embed all docs into pgvector
+python -m scripts.build_graph         # build the knowledge graph (nodes/edges/entities)
+python -m scripts.run_eval            # (optional) run the eval harness, store metrics
+
 uvicorn app.main:app --reload --port 8000
 ```
-No Docker required — the app connects directly to a hosted Postgres instance via `DATABASE_URL`. Visit
-`http://localhost:8000/docs` for interactive API docs, or `http://localhost:8000/health` to check DB +
-pgvector status.
+No Docker required — the app connects directly to a hosted Postgres instance built from the `POSTGRES_*`
+vars in `.env`. Visit `http://localhost:8000/docs` for interactive API docs, or `http://localhost:8000/health`
+to check DB + pgvector status. Embeddings are stored in Postgres via **pgvector** (bge-small, 384-dim, via
+fastembed — local and free). The first `ingest_corpus`/embed call downloads the ONNX model once (~100MB, cached).
 
-Run tests: `python -m pytest tests/ -v` (6 passing as of Interval 0).
+The cited copilot uses an **OpenAI-compatible LLM** (Groq free tier by default — set `LLM_API_KEY` in `.env`;
+or point `LLM_BASE_URL` at a local Ollama). Without a key it falls back to extractive cited answers.
+Embeddings are local/free (fastembed).
+
+Run tests: `python -m pytest tests/ -q` (10 passing, hermetic — uses in-memory SQLite, never the hosted DB).
 
 ## Frontend setup
 ```bash

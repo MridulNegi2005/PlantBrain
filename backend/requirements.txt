@@ -13,6 +13,21 @@ pydantic-settings==2.7.0
 python-dotenv==1.2.2
 python-multipart==0.0.31
 
+# Ingestion pipeline (Interval 2): extraction, chunking, embeddings
+pymupdf==1.25.1           # PDF text + tables (avoids pdfminer.six PDF-pickle RCE)
+pandas==2.2.3
+openpyxl==3.1.5
+fastembed==0.8.0          # ONNX embeddings, no torch; needs mmh3>=5 for py3.13 wheels
+mmh3==5.2.1
+pillow==12.3.0            # pinned past image-decoder CVEs (transitive via reportlab/fastembed)
+
+# Corpus generation (synthetic demo documents)
+reportlab==4.2.5
+pypdf==6.13.3
+
+# Interval 3: knowledge graph
+networkx==3.4.2
+
 # Testing
 pytest==9.0.3
 httpx==0.28.1
