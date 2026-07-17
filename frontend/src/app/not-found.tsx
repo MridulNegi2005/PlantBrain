@@ -6,7 +6,7 @@ import { buttonVariants } from "@/components/ui/button"
 export default function NotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center">
-      <span className="flex size-14 items-center justify-center rounded-full border bg-card text-primary">
+      <span className="flex size-14 items-center justify-center rounded-sm border bg-card text-primary">
         <SearchXIcon className="size-6" />
       </span>
       <div className="max-w-md">

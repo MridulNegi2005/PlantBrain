@@ -1,7 +1,7 @@
 "use client"
 
 import { FormEvent, useReducer, useState } from "react"
-import { ClipboardCheckIcon, FileWarningIcon, ShieldCheckIcon } from "lucide-react"
+import { CircleHelpIcon, ClipboardCheckIcon, FileWarningIcon, ShieldCheckIcon } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -82,7 +82,7 @@ export function ComplianceWorkbench() {
           <Card>
             <CardHeader>
               <CardDescription>{report.asset}</CardDescription>
-              <CardTitle>{report.requirement}</CardTitle>
+              <CardTitle>{report.requirement ?? "Requirement not identified"}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               <StatusBadge status={report.status} />
@@ -96,13 +96,29 @@ export function ComplianceWorkbench() {
               <AlertTitle>Required evidence is missing</AlertTitle>
               <AlertDescription>{report.missing_evidence ?? "The API did not specify the missing evidence."}</AlertDescription>
             </Alert>
-          ) : (
+          ) : report.status === "ok" || report.status === "pass" ? (
             <Alert>
               <ShieldCheckIcon />
               <AlertTitle>Evidence requirement satisfied</AlertTitle>
               <AlertDescription>The returned packet supports this compliance requirement.</AlertDescription>
             </Alert>
+          ) : (
+            <Alert>
+              <CircleHelpIcon />
+              <AlertTitle>Compliance result is inconclusive</AlertTitle>
+              <AlertDescription>
+                The backend could not determine a pass or gap. Review the evidence packet before taking action.
+              </AlertDescription>
+            </Alert>
           )}
+
+          {report.note ? (
+            <Alert>
+              <CircleHelpIcon />
+              <AlertTitle>Backend note</AlertTitle>
+              <AlertDescription>{report.note}</AlertDescription>
+            </Alert>
+          ) : null}
 
           <Card>
             <CardHeader>

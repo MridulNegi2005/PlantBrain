@@ -56,6 +56,7 @@ import { percent } from "@/lib/format"
 type Exchange = {
   id: string
   question: string
+  assetTag?: string
   response: CopilotAnswer
 }
 
@@ -75,14 +76,15 @@ export function CopilotWorkbench() {
   async function submit(event: FormEvent) {
     event.preventDefault()
     const trimmed = question.trim()
+    const requestedAssetTag = assetTag.trim().toUpperCase() || undefined
     if (!trimmed || busy) return
     setBusy(true)
     setError(null)
     try {
-      const response = await askCopilot(trimmed, assetTag.trim() || undefined)
+      const response = await askCopilot(trimmed, requestedAssetTag)
       setExchanges((current) => [
         ...current,
-        { id: crypto.randomUUID(), question: trimmed, response },
+        { id: crypto.randomUUID(), question: trimmed, assetTag: requestedAssetTag, response },
       ])
       setQuestion("")
     } catch (caught) {
@@ -95,13 +97,13 @@ export function CopilotWorkbench() {
   return (
     <>
       <div className="grid min-h-[42rem] gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="flex min-h-[42rem] min-w-0 flex-col overflow-hidden rounded-xl border bg-card">
+        <div className="flex min-h-[42rem] min-w-0 flex-col overflow-hidden rounded-sm border bg-card">
           <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
             <div className="flex items-center gap-2">
               <BrainCircuitIcon className="size-4 text-primary" />
               <div>
                 <p className="text-sm font-medium">Evidence-grounded copilot</p>
-                <p className="text-xs text-muted-foreground">Asset scope: {assetTag || "plant-wide"}</p>
+                <p className="font-mono text-[0.62rem] text-muted-foreground">Next query: {assetTag || "plant-wide"}</p>
               </div>
             </div>
             <Badge variant="outline">No source · no answer</Badge>
@@ -136,7 +138,7 @@ export function CopilotWorkbench() {
                                 <Avatar><AvatarFallback><UserIcon /></AvatarFallback></Avatar>
                               </MessageAvatar>
                               <MessageContent>
-                                <MessageHeader>You</MessageHeader>
+                                <MessageHeader>You / {exchange.assetTag ?? "PLANT-WIDE"}</MessageHeader>
                                 <Bubble align="end"><BubbleContent>{exchange.question}</BubbleContent></Bubble>
                               </MessageContent>
                             </Message>
@@ -153,6 +155,14 @@ export function CopilotWorkbench() {
                                   <Bubble variant="ghost">
                                     <BubbleContent className="flex flex-col gap-4">
                                       <p className="text-base leading-relaxed">{exchange.response.answer}</p>
+
+                                      {exchange.response.note ? (
+                                        <Alert>
+                                          <FileSearchIcon />
+                                          <AlertTitle>Retrieval note</AlertTitle>
+                                          <AlertDescription>{exchange.response.note}</AlertDescription>
+                                        </Alert>
+                                      ) : null}
 
                                       {exchange.response.missing_evidence?.length ? (
                                         <Alert>
@@ -267,7 +277,7 @@ export function CopilotWorkbench() {
         </div>
 
         <aside className="flex flex-col gap-4">
-          <div className="rounded-xl border bg-card p-4">
+          <div className="rounded-sm border bg-card p-4">
             <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Query scope</p>
             <Field className="mt-4">
               <FieldLabel htmlFor="asset-scope">Asset tag</FieldLabel>
@@ -284,7 +294,7 @@ export function CopilotWorkbench() {
               <FieldDescription>Leave blank for plant-wide retrieval.</FieldDescription>
             </Field>
           </div>
-          <div className="rounded-xl border bg-card p-4">
+          <div className="rounded-sm border bg-card p-4">
             <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Answer contract</p>
             <div className="mt-4 flex flex-col gap-3 text-sm text-muted-foreground">
               <p>Direct answer grounded in retrieved chunks.</p>
@@ -312,7 +322,7 @@ export function CopilotWorkbench() {
           <ScrollArea className="min-h-0 flex-1 px-4">
             <div className="evidence-spine flex flex-col gap-5 pb-6 pl-7">
               {selectedEvidence?.citations.map((citation, index) => (
-                <article key={`${citation.document}-${citation.page}-${index}`} className="relative rounded-lg border bg-background p-4 before:absolute before:-left-[1.68rem] before:top-5 before:size-3 before:rounded-full before:border-2 before:border-primary before:bg-background">
+                <article key={`${citation.document}-${citation.page}-${index}`} className="relative rounded-sm border bg-background p-4 before:absolute before:-left-[1.68rem] before:top-5 before:size-3 before:border-2 before:border-primary before:bg-background">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-medium">{citation.document}</p>
                     <Badge variant="outline">Page {citation.page}</Badge>
@@ -323,7 +333,7 @@ export function CopilotWorkbench() {
               ))}
             </div>
             {selectedEvidence?.graphPath.length ? (
-              <div className="mb-6 rounded-lg border bg-muted/40 p-4">
+              <div className="mb-6 rounded-sm border bg-muted p-4">
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Graph reasoning path</p>
                 <p className="mt-2 font-mono text-xs leading-relaxed">{selectedEvidence.graphPath.join(" → ")}</p>
               </div>

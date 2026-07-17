@@ -18,7 +18,7 @@ import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress
 import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
 import { getEvaluationRun, startEvaluation } from "@/lib/api/client"
-import type { EvaluationCase, EvaluationMetrics, EvaluationRun } from "@/lib/api/types"
+import type { EvaluationCase, EvaluationMetrics, EvaluationRun, LatestEvaluationRun } from "@/lib/api/types"
 import { percent, titleCase } from "@/lib/format"
 
 const metricDefinitions: Array<{ key: keyof EvaluationMetrics; label: string }> = [
@@ -36,8 +36,35 @@ const metricDefinitions: Array<{ key: keyof EvaluationMetrics; label: string }> 
 const EVALUATION_POLL_ATTEMPTS = 30
 const EVALUATION_POLL_INTERVAL_MS = 1000
 
-export function EvaluationWorkbench({ cases, total }: { cases: EvaluationCase[]; total: number }) {
-  const [run, setRun] = useState<EvaluationRun | null>(null)
+const completeMetricKeys = [
+  ...metricDefinitions.map((definition) => definition.key),
+  "avg_response_time_sec",
+  "manual_baseline_sec",
+] as const satisfies readonly (keyof EvaluationMetrics)[]
+
+function hydrateLatestRun(latest?: LatestEvaluationRun): EvaluationRun | null {
+  if (!latest?.id) return null
+  const hasCompleteMetrics = completeMetricKeys.every(
+    (key) => typeof latest.metrics[key] === "number"
+  )
+  return {
+    id: latest.id,
+    status: latest.status,
+    completed_at: latest.completed_at,
+    metrics: hasCompleteMetrics ? latest.metrics as EvaluationMetrics : undefined,
+  }
+}
+
+export function EvaluationWorkbench({
+  cases,
+  total,
+  initialRun,
+}: {
+  cases: EvaluationCase[]
+  total: number
+  initialRun?: LatestEvaluationRun
+}) {
+  const [run, setRun] = useState<EvaluationRun | null>(() => hydrateLatestRun(initialRun))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -159,37 +186,40 @@ export function EvaluationWorkbench({ cases, total }: { cases: EvaluationCase[];
 
       {run?.metrics ? (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Evaluation metrics">
+          <section className="grid gap-px border border-border bg-border md:grid-cols-2 xl:grid-cols-3" aria-label="Evaluation metrics">
             {metricDefinitions.map((definition) => {
               const value = run.metrics?.[definition.key]
               if (typeof value !== "number") return null
               return (
-                <Card key={definition.key} size="sm">
-                  <CardHeader>
-                    <CardTitle>{definition.label}</CardTitle>
-                    <CardDescription>Measured from the completed benchmark run.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                <div key={definition.key} className="bg-card p-4">
+                  <div>
+                    <p className="technical-label">Measured score</p>
+                    <h3 className="mt-1 text-sm font-semibold">{definition.label}</h3>
+                  </div>
+                  <div className="mt-6">
                     <Progress value={value * 100}>
                       <ProgressLabel>Score</ProgressLabel>
                       <ProgressValue>{() => percent(value)}</ProgressValue>
                     </Progress>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )
             })}
           </section>
 
-          <section className="grid gap-4 md:grid-cols-3">
-            <Card size="sm">
-              <CardHeader><CardDescription>PlantBrain response</CardDescription><CardTitle className="font-mono text-3xl">{run.metrics.avg_response_time_sec}s</CardTitle><CardAction><TimerIcon className="size-4 text-primary" /></CardAction></CardHeader>
-            </Card>
-            <Card size="sm">
-              <CardHeader><CardDescription>Manual baseline</CardDescription><CardTitle className="font-mono text-3xl">{Math.round(run.metrics.manual_baseline_sec / 60)}m</CardTitle><CardAction><GaugeIcon className="size-4 text-muted-foreground" /></CardAction></CardHeader>
-            </Card>
-            <Card size="sm">
-              <CardHeader><CardDescription>Run status</CardDescription><CardTitle className="font-mono text-2xl">{run.status.toUpperCase()}</CardTitle><CardAction><ActivityIcon className="size-4 text-primary" /></CardAction></CardHeader>
-            </Card>
+          <section className="grid gap-px border border-border bg-border md:grid-cols-3">
+            <div className="bg-card p-5">
+              <div className="flex items-center justify-between"><p className="technical-label">PlantBrain response</p><TimerIcon className="size-4 text-primary" /></div>
+              <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{run.metrics.avg_response_time_sec}s</p>
+            </div>
+            <div className="bg-card p-5">
+              <div className="flex items-center justify-between"><p className="technical-label">Manual baseline</p><GaugeIcon className="size-4 text-muted-foreground" /></div>
+              <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{Math.round(run.metrics.manual_baseline_sec / 60)}m</p>
+            </div>
+            <div className="bg-card p-5">
+              <div className="flex items-center justify-between"><p className="technical-label">Run status</p><ActivityIcon className="size-4 text-primary" /></div>
+              <p className="mt-5 font-mono text-2xl text-primary">{run.status.toUpperCase()}</p>
+            </div>
           </section>
         </>
       ) : (

@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 
 import { DataUnavailable } from "@/components/data-unavailable"
+import { DocumentChunksPanel } from "@/components/document-chunks-panel"
 import { DocumentIngestionControl } from "@/components/document-ingestion-control"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
@@ -21,7 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { ApiError, getDocument } from "@/lib/api/client"
+import { ApiError, getDocument, getDocumentChunks } from "@/lib/api/client"
 import { formatDate, titleCase } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -34,10 +35,21 @@ export default async function DocumentDetailPage({
 }) {
   const { documentId } = await params
 
-  const result = await getDocument(documentId).catch((error: unknown) => {
-    if (error instanceof ApiError && error.status === 404) notFound()
-    return null
-  })
+  const [documentResult, chunksResult] = await Promise.allSettled([
+    getDocument(documentId),
+    getDocumentChunks(documentId),
+  ])
+
+  if (
+    documentResult.status === "rejected" &&
+    documentResult.reason instanceof ApiError &&
+    documentResult.reason.status === 404
+  ) {
+    notFound()
+  }
+
+  const result = documentResult.status === "fulfilled" ? documentResult.value : null
+  const chunks = chunksResult.status === "fulfilled" ? chunksResult.value : null
 
   if (!result) {
     return (
@@ -69,33 +81,29 @@ export default async function DocumentDetailPage({
         status={result.status.toUpperCase()}
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Document metrics">
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>Document type</CardDescription>
-            <CardTitle>{titleCase(result.doc_type)}</CardTitle>
-            <CardAction><FileTextIcon className="size-4 text-muted-foreground" /></CardAction>
-          </CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>Pages</CardDescription>
-            <CardTitle className="font-mono text-3xl">{result.page_count}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>Evidence chunks</CardDescription>
-            <CardTitle className="font-mono text-3xl">{result.chunks_count}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>Index status</CardDescription>
-            <CardTitle><StatusBadge status={result.status} /></CardTitle>
-          </CardHeader>
-        </Card>
+      <section className="grid divide-y divide-border border border-border bg-card sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4" aria-label="Document metrics">
+        <div className="p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="technical-label">Document type</p>
+            <FileTextIcon className="size-4 text-muted-foreground" />
+          </div>
+          <p className="mt-5 text-lg font-semibold">{titleCase(result.doc_type)}</p>
+        </div>
+        <div className="p-4 sm:p-5">
+          <p className="technical-label">Pages</p>
+          <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{result.page_count ?? "—"}</p>
+        </div>
+        <div className="p-4 sm:p-5">
+          <p className="technical-label">Evidence chunks</p>
+          <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{result.chunks_count}</p>
+        </div>
+        <div className="p-4 sm:p-5">
+          <p className="technical-label">Index status</p>
+          <div className="mt-5"><StatusBadge status={result.status} /></div>
+        </div>
       </section>
+
+      {chunks ? <DocumentChunksPanel chunks={chunks} /> : <DataUnavailable label="Document evidence chunks" />}
 
       <section className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
         <div className="flex flex-col gap-4">

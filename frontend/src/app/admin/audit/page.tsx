@@ -41,16 +41,19 @@ export default async function AuditPage() {
       />
       {!logs ? <DataUnavailable label="Audit log" /> : null}
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        <Card size="sm">
-          <CardHeader><CardDescription>Audit events</CardDescription><CardTitle className="font-mono text-3xl">{logs?.total ?? "—"}</CardTitle></CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader><CardDescription>Security events</CardDescription><CardTitle className="font-mono text-3xl">{security?.total ?? "—"}</CardTitle></CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader><CardDescription>Control posture</CardDescription><CardTitle className="flex items-center gap-2 text-base"><ShieldCheckIcon className="size-4 text-primary" /> Read-only AI agents</CardTitle></CardHeader>
-        </Card>
+      <section className="grid gap-px border border-border bg-border lg:grid-cols-3" aria-label="Audit summary">
+        <div className="bg-card p-5">
+          <p className="technical-label">Audit events</p>
+          <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{logs?.total ?? "—"}</p>
+        </div>
+        <div className="bg-card p-5">
+          <p className="technical-label">Security events</p>
+          <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{security?.total ?? "—"}</p>
+        </div>
+        <div className="bg-card p-5">
+          <p className="technical-label">Control posture</p>
+          <p className="mt-5 flex items-center gap-2 text-base font-semibold"><ShieldCheckIcon className="size-4 text-primary" /> Read-only AI agents</p>
+        </div>
       </section>
 
       <Card>
@@ -93,7 +96,7 @@ export default async function AuditPage() {
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2">
           {security?.items.map((event) => (
-            <article key={event.id} className="rounded-lg border bg-background/50 p-4">
+            <article key={event.id} className="rounded-sm border bg-background p-4">
               <div className="flex items-center justify-between gap-3">
                 <Badge variant="destructive"><AlertTriangleIcon data-icon="inline-start" />{titleCase(event.event_type)}</Badge>
                 <time className="font-mono text-[0.68rem] text-muted-foreground">{formatDateTime(event.created_at)}</time>

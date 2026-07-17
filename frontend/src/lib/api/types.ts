@@ -10,7 +10,10 @@ export type Health = {
 }
 
 export type DocumentStatus =
+  | "registered"
   | "uploaded"
+  | "queued"
+  | "processing"
   | "extracting"
   | "chunking"
   | "embedding"
@@ -28,8 +31,25 @@ export type DocumentSummary = {
 }
 
 export type DocumentDetail = DocumentSummary & {
-  page_count: number
+  page_count: number | null
   chunks_count: number
+}
+
+export type DocumentChunk = {
+  chunk_id: string
+  page: number
+  text: string
+  bbox: {
+    x0: number
+    y0: number
+    x1: number
+    y1: number
+  } | null
+  asset_tags: string[]
+}
+
+export type DocumentChunksResponse = ListResponse<DocumentChunk> & {
+  stub: boolean
 }
 
 export type UploadedDocument = {
@@ -105,6 +125,7 @@ export type CopilotAnswer = {
   graph_path?: string[]
   missing_evidence?: string[]
   recommended_next_actions?: string[]
+  note?: string
 }
 
 export type RcaCause = {
@@ -119,6 +140,8 @@ export type RcaReport = {
   likely_causes: RcaCause[]
   missing_checks: string[]
   recommended_actions: string[]
+  reason?: string
+  note?: string
 }
 
 export type SimilarIncident = {
@@ -137,11 +160,12 @@ export type SimilarLessonsResponse = {
 
 export type ComplianceReport = {
   asset: string
-  requirement: string
-  status: "pass" | "gap"
+  requirement: string | null
+  status: "ok" | "pass" | "gap" | "unknown"
   evidence_found: string[]
   missing_evidence: string | null
   risk_level: string
+  note?: string
 }
 
 export type EvaluationCase = {
@@ -167,8 +191,15 @@ export type EvaluationMetrics = {
 export type EvaluationRun = {
   id: string
   status: string
-  completed_at?: string
+  completed_at?: string | null
   metrics?: EvaluationMetrics
+}
+
+export type LatestEvaluationRun = {
+  id: string | null
+  status: string
+  completed_at?: string | null
+  metrics: Partial<EvaluationMetrics>
 }
 
 export type AuditLog = {

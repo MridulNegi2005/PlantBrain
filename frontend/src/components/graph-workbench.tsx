@@ -128,7 +128,7 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
               <CardDescription>{graph.nodes.length} nodes · {graph.edges.length} provenance-scored edges</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-hidden rounded-xl border bg-background/50">
+              <div className="overflow-hidden rounded-sm border bg-background">
                 <svg viewBox="0 0 800 460" role="img" aria-label={`Knowledge graph for ${loadedAsset}`} className="h-auto min-h-[24rem] w-full">
                   <defs>
                     <marker id="graph-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
@@ -165,10 +165,19 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") setSelectedNode(node.id)
                         }}
-                        className="cursor-pointer outline-none"
+                        className="cursor-pointer outline-none focus:[&>rect]:stroke-[var(--ring)]"
                         opacity={connected ? 1 : 0.35}
                       >
-                        <circle r={node.type === "Asset" ? 42 : 34} fill={active ? "var(--primary)" : "var(--card)"} stroke={active ? "var(--primary)" : "var(--border)"} strokeWidth={active ? 3 : 2} />
+                        <rect
+                          x={node.type === "Asset" ? -52 : -45}
+                          y={node.type === "Asset" ? -30 : -26}
+                          width={node.type === "Asset" ? 104 : 90}
+                          height={node.type === "Asset" ? 60 : 52}
+                          rx="2"
+                          fill={active ? "var(--primary)" : "var(--card)"}
+                          stroke={active ? "var(--primary)" : "var(--border)"}
+                          strokeWidth={active ? 3 : 2}
+                        />
                         <text textAnchor="middle" y="-3" fill={active ? "var(--primary-foreground)" : "var(--foreground)"} fontSize="12" fontWeight="650">{node.label}</text>
                         <text textAnchor="middle" y="15" fill={active ? "var(--primary-foreground)" : "var(--muted-foreground)"} fontSize="8" fontFamily="var(--font-geist-mono)">{node.type.toUpperCase()}</text>
                       </g>

@@ -54,10 +54,20 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
         status={asset.plant_id.toUpperCase()}
       />
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <Card size="sm"><CardHeader><CardDescription>Linked evidence</CardDescription><CardTitle className="font-mono text-3xl">{asset.document_count}</CardTitle></CardHeader></Card>
-        <Card size="sm"><CardHeader><CardDescription>Open risks</CardDescription><CardTitle className="font-mono text-3xl">{asset.open_risks}</CardTitle></CardHeader></Card>
-        <Card size="sm"><CardHeader><CardDescription>Compliance gaps</CardDescription><CardTitle className="font-mono text-3xl">{asset.compliance_gaps}</CardTitle></CardHeader></Card>
+      <section className="grid divide-y divide-border border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0" aria-label="Asset metrics">
+        {[
+          ["Evidence", "Linked records", asset.document_count],
+          ["Risk", "Open findings", asset.open_risks],
+          ["Compliance", "Evidence gaps", asset.compliance_gaps],
+        ].map(([code, label, value]) => (
+          <div key={String(code)} className="p-5">
+            <div className="flex items-center justify-between gap-4">
+              <p className="technical-label">{String(code)}</p>
+              <p className="font-mono text-[0.62rem] text-muted-foreground uppercase">{String(label)}</p>
+            </div>
+            <p className="mt-6 font-mono text-5xl tracking-[-0.08em]">{Number(value)}</p>
+          </div>
+        ))}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
@@ -68,7 +78,7 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
           </CardHeader>
           <CardContent className="evidence-spine flex flex-col gap-5 pl-8">
             {timeline.map((item) => (
-              <article key={`${item.type}-${item.id}`} className="relative rounded-lg border bg-background/50 p-4 before:absolute before:-left-[1.92rem] before:top-5 before:size-3 before:rounded-full before:border-2 before:border-primary before:bg-background">
+              <article key={`${item.type}-${item.id}`} className="relative rounded-sm border bg-background p-4 before:absolute before:-left-[1.92rem] before:top-5 before:size-3 before:border-2 before:border-primary before:bg-background">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{titleCase(item.type)}</Badge>

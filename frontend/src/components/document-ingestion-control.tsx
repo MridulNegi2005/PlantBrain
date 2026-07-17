@@ -122,7 +122,7 @@ export function DocumentIngestionControl({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background/50 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-sm border bg-background p-3">
           <div>
             <p className="text-xs text-muted-foreground">Current backend state</p>
             <p className="mt-1 font-mono text-xs">{jobId ?? documentId}</p>

@@ -14,8 +14,10 @@ import {
   getAuditLogs,
   getDocuments,
   getDocument,
+  getDocumentChunks,
   getEvaluationCases,
   getEvaluationRun,
+  getLatestEvaluationRun,
   getHealth,
   getIngestionJob,
   getSecurityEvents,
@@ -67,6 +69,7 @@ describe("PlantBrain API client", () => {
 
   it("encodes identifiers placed in request paths", async () => {
     await getDocument("doc/42")
+    await getDocumentChunks("doc/42")
     await getAsset("P/204 A")
     await getAssetTimeline("P/204 A")
     await getAssetGraph("P/204 A")
@@ -76,6 +79,7 @@ describe("PlantBrain API client", () => {
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       `${API_URL}/api/documents/doc%2F42`,
+      `${API_URL}/api/documents/doc%2F42/chunks`,
       `${API_URL}/api/assets/P%2F204%20A`,
       `${API_URL}/api/assets/P%2F204%20A/timeline`,
       `${API_URL}/api/assets/P%2F204%20A/graph`,
@@ -153,12 +157,14 @@ describe("PlantBrain API client", () => {
     await getEvaluationCases()
     await getAuditLogs()
     await getSecurityEvents()
+    await getLatestEvaluationRun()
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       `${API_URL}/api/assets`,
       `${API_URL}/api/evaluation/cases`,
       `${API_URL}/api/audit-logs`,
       `${API_URL}/api/security-events`,
+      `${API_URL}/api/evaluation/runs`,
     ])
   })
 

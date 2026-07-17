@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import {
   CheckIcon,
   FileUpIcon,
+  RefreshCwIcon,
   ShieldCheckIcon,
   XIcon,
 } from "lucide-react"
@@ -47,6 +48,7 @@ export function UploadWorkbench() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [uploaded, setUploaded] = useState<UploadedDocument | null>(null)
+  const [jobId, setJobId] = useState<string | null>(null)
   const [job, setJob] = useState<IngestionJob | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -56,11 +58,16 @@ export function UploadWorkbench() {
     if (!nextFile) return
     const validationError = validateFile(nextFile)
     setError(validationError)
-    if (validationError) return
-    setFile(nextFile)
     setUploaded(null)
     setJob(null)
+    setJobId(null)
     setNotice(null)
+    if (validationError) {
+      setFile(null)
+      if (inputRef.current) inputRef.current.value = ""
+      return
+    }
+    setFile(nextFile)
   }
 
   async function runUpload() {
@@ -72,6 +79,7 @@ export function UploadWorkbench() {
       const document = await uploadDocument(file)
       setUploaded(document)
       const queued = await ingestDocument(document.id)
+      setJobId(queued.ingestion_job_id)
       let reachedTerminalState = false
 
       for (let attempt = 0; attempt < INGESTION_POLL_ATTEMPTS; attempt += 1) {
@@ -84,9 +92,11 @@ export function UploadWorkbench() {
         if (current.status === "failed") {
           throw new Error(current.error ?? "The ingestion job failed.")
         }
-        await new Promise((resolve) =>
-          window.setTimeout(resolve, INGESTION_POLL_INTERVAL_MS)
-        )
+        if (attempt < INGESTION_POLL_ATTEMPTS - 1) {
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, INGESTION_POLL_INTERVAL_MS)
+          )
+        }
       }
 
       if (!reachedTerminalState) {
@@ -96,6 +106,27 @@ export function UploadWorkbench() {
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The upload could not be completed.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function checkLatestState() {
+    if (!jobId) return
+    setBusy(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const current = await getIngestionJob(jobId)
+      setJob(current)
+      if (current.status === "failed") {
+        throw new Error(current.error ?? "The ingestion job failed.")
+      }
+      if (current.status !== "completed") {
+        setNotice("The job is still active. Its latest backend state is shown in the pipeline.")
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The ingestion state could not be refreshed.")
     } finally {
       setBusy(false)
     }
@@ -117,8 +148,8 @@ export function UploadWorkbench() {
               <button
                 type="button"
                 className={cn(
-                  "flex min-h-56 w-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-background/50 p-6 text-center transition-colors hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                  file && "border-primary/60 bg-primary/5"
+                  "flex min-h-56 w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-sm border border-dashed bg-background p-6 text-center transition-colors hover:border-primary hover:bg-muted focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                  file && "border-primary bg-muted"
                 )}
                 onClick={() => inputRef.current?.click()}
                 onDragOver={(event) => event.preventDefault()}
@@ -127,7 +158,7 @@ export function UploadWorkbench() {
                   chooseFile(event.dataTransfer.files[0])
                 }}
               >
-                <span className="flex size-12 items-center justify-center rounded-full border bg-card text-primary">
+                <span className="flex size-12 items-center justify-center rounded-sm border bg-card text-primary">
                   <FileUpIcon className="size-5" />
                 </span>
                 <span>
@@ -157,10 +188,18 @@ export function UploadWorkbench() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheckIcon className="size-4" /> Server-side type, size, and hash checks still apply.
           </div>
-          <Button onClick={runUpload} disabled={!file || busy}>
-            {busy ? <Spinner data-icon="inline-start" /> : <FileUpIcon data-icon="inline-start" />}
-            {busy ? "Processing" : "Upload and ingest"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {jobId && job?.status !== "completed" && job?.status !== "failed" ? (
+              <Button variant="outline" onClick={checkLatestState} disabled={busy}>
+                <RefreshCwIcon data-icon="inline-start" />
+                Check latest
+              </Button>
+            ) : null}
+            <Button onClick={runUpload} disabled={!file || busy}>
+              {busy ? <Spinner data-icon="inline-start" /> : <FileUpIcon data-icon="inline-start" />}
+              {busy ? "Processing" : "Upload and ingest"}
+            </Button>
+          </div>
         </CardFooter>
       </Card>
 

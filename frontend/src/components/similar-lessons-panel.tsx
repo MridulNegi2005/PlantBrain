@@ -43,7 +43,7 @@ export function SimilarLessonsPanel({
             {incidents.map((incident) => (
               <article
                 key={incident.incident_id}
-                className="rounded-lg border bg-background/50 p-4"
+                className="rounded-sm border bg-background p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-mono text-xs text-primary">
@@ -73,7 +73,7 @@ export function SimilarLessonsPanel({
             ))}
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed p-6 text-center">
+          <div className="rounded-sm border border-dashed p-6 text-center">
             <BookOpenCheckIcon className="mx-auto size-6 text-muted-foreground" />
             <p className="mt-3 text-sm font-medium">No comparable incidents returned</p>
             <p className="mt-1 text-xs text-muted-foreground">

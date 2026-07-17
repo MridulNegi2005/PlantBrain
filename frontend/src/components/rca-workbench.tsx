@@ -120,6 +120,20 @@ export function RcaWorkbench() {
         <div className="flex flex-col gap-4">
           {report ? (
             <>
+              {report.reason ? (
+                <Alert variant="destructive">
+                  <AlertTriangleIcon />
+                  <AlertTitle>RCA withheld</AlertTitle>
+                  <AlertDescription>{report.reason}</AlertDescription>
+                </Alert>
+              ) : null}
+              {report.note ? (
+                <Alert>
+                  <SearchCheckIcon />
+                  <AlertTitle>Backend note</AlertTitle>
+                  <AlertDescription>{report.note}</AlertDescription>
+                </Alert>
+              ) : null}
               <Card>
                 <CardHeader>
                   <CardDescription>{report.asset}</CardDescription>
@@ -150,18 +164,22 @@ export function RcaWorkbench() {
                   <AlertTriangleIcon />
                   <AlertTitle>Missing checks</AlertTitle>
                   <AlertDescription>
-                    <ul className="flex list-disc flex-col gap-1 pl-4">
-                      {report.missing_checks.map((check) => <li key={check}>{check}</li>)}
-                    </ul>
+                    {report.missing_checks.length ? (
+                      <ul className="flex list-disc flex-col gap-1 pl-4">
+                        {report.missing_checks.map((check) => <li key={check}>{check}</li>)}
+                      </ul>
+                    ) : <p>No missing checks were returned.</p>}
                   </AlertDescription>
                 </Alert>
                 <Alert>
                   <WrenchIcon />
                   <AlertTitle>Recommended actions</AlertTitle>
                   <AlertDescription>
-                    <ol className="flex list-decimal flex-col gap-1 pl-4">
-                      {report.recommended_actions.map((action) => <li key={action}>{action}</li>)}
-                    </ol>
+                    {report.recommended_actions.length ? (
+                      <ol className="flex list-decimal flex-col gap-1 pl-4">
+                        {report.recommended_actions.map((action) => <li key={action}>{action}</li>)}
+                      </ol>
+                    ) : <p>No recommended actions were returned.</p>}
                   </AlertDescription>
                 </Alert>
               </div>

@@ -7,9 +7,11 @@ import type {
   ComplianceReport,
   CopilotAnswer,
   DocumentDetail,
+  DocumentChunksResponse,
   DocumentSummary,
   EvaluationCase,
   EvaluationRun,
+  LatestEvaluationRun,
   Health,
   IngestionJob,
   KnowledgeGraph,
@@ -76,6 +78,12 @@ export function getDocuments(query?: URLSearchParams) {
 export function getDocument(documentId: string) {
   return request<DocumentDetail>(
     `/api/documents/${encodeURIComponent(documentId)}`
+  )
+}
+
+export function getDocumentChunks(documentId: string) {
+  return request<DocumentChunksResponse>(
+    `/api/documents/${encodeURIComponent(documentId)}/chunks`
   )
 }
 
@@ -164,6 +172,10 @@ export function getEvaluationRun(runId: string) {
   return request<EvaluationRun>(
     `/api/evaluation/runs/${encodeURIComponent(runId)}`
   )
+}
+
+export function getLatestEvaluationRun() {
+  return request<LatestEvaluationRun>("/api/evaluation/runs")
 }
 
 export function getAuditLogs() {
