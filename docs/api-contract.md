@@ -15,9 +15,8 @@
 > **v0.1 (Interval 1):** documents/assets/ingestion/audit backed by real Postgres; added
 > `GET /api/documents/{id}/chunks`.
 
-This is the contract for the FastAPI backend. All endpoints below are **live as stubs right now**, returning
-fixture data shaped exactly like the real thing will be. Build the frontend against these — when real
-endpoints land in later intervals, the response shapes will not change (only the data becomes real).
+This is the contract for the FastAPI backend. Endpoints are backed by persisted project data; when evidence
+has not been ingested, APIs return explicit empty, pending, or unknown states rather than fixture evidence.
 
 Base URL (dev): `http://localhost:8000`
 
@@ -78,8 +77,8 @@ Query: `plant_id`, `doc_type`, `asset_tag`, `status`, `page`, `page_size`.
 
 ### `GET /api/documents/{id}/chunks`
 Page-level chunks for the evidence / citation drawer. Returns **real chunks** once a
-document has been ingested (`"stub": false`); for a not-yet-ingested document it
-returns a small stub sample (`"stub": true`) with the same item shape.
+document has been ingested (`"stub": false`). A document still awaiting successful
+ingestion returns `{ "items": [], "total": 0, "stub": true }`; no sample evidence is fabricated.
 ```json
 {
   "items": [
@@ -200,8 +199,9 @@ Response: see build plan §17.2 (`likely_causes[]` with `cause`, `confidence`, `
 
 ### `POST /api/compliance/check`
 Request: `{ "asset_tag": "V-301" }`
-Response: see build plan §18.2 (`requirement`, `status: pass|gap`, `evidence_found[]`, `missing_evidence`,
-`risk_level`).
+Response: see build plan §18.2 (`requirement`, `status: pass|gap|unknown`, `evidence_found[]`,
+`missing_evidence`, `risk_level`). `requirement` and `missing_evidence` may be `null` when no supporting
+evidence exists. `unknown` must never be presented as a pass.
 
 ### `POST /api/lessons/similar`
 Request: `{ "failure_mode": "seal leakage" }`
@@ -241,6 +241,12 @@ Response `202`: `{ "run_id": "eval_01HJKL", "status": "running" }`
     "avg_response_time_sec": 4.2, "manual_baseline_sec": 720
   }
 }
+```
+
+### `GET /api/evaluation/runs`
+Returns the latest completed run using the same run shape. Before the first completed run:
+```json
+{ "id": null, "status": "none", "metrics": {} }
 ```
 
 ---

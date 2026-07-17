@@ -33,6 +33,12 @@ def generate(db: Session, asset_tag: str, issue: str) -> dict:
                 "missing_checks": [], "recommended_actions": [],
                 "reason": "no_supporting_evidence"}
 
+    from app.security.injection import check_evidence
+    if check_evidence(db, evidence):
+        return {"asset": asset_tag, "issue": issue, "likely_causes": [],
+                "citations": [], "missing_checks": [], "recommended_actions": [],
+                "reason": "unsafe_evidence"}
+
     if llm.available():
         try:
             return _llm_rca(asset_tag, issue, evidence, result["graph_path"])
@@ -49,16 +55,27 @@ def _llm_rca(asset_tag: str, issue: str, evidence: list[dict], graph_path: list[
                           {"role": "user", "content": user}], temperature=0.1)
 
     causes = []
+    report_citations: dict[str, dict] = {}
     for c in data.get("likely_causes", []):
         idxs = [i for i in c.get("evidence", []) if isinstance(i, int) and 1 <= i <= len(evidence)]
+        if not idxs or not c.get("cause"):
+            continue
+        citations = [_citation(evidence[i - 1]) for i in idxs]
+        for citation in citations:
+            report_citations[citation["chunk_id"]] = citation
         causes.append({
             "cause": c.get("cause", ""),
             "confidence": float(c.get("confidence", 0.6)),
             "evidence": [evidence[i - 1]["filename"] for i in idxs],
-            "citations": [_citation(evidence[i - 1]) for i in idxs],
+            "citations": citations,
         })
+    if not causes:
+        return {"asset": asset_tag, "issue": issue, "likely_causes": [],
+                "citations": [], "missing_checks": [], "recommended_actions": [],
+                "graph_path": graph_path, "reason": "no_supporting_evidence"}
     return {
         "asset": asset_tag, "issue": issue, "likely_causes": causes,
+        "citations": list(report_citations.values()),
         "missing_checks": data.get("missing_checks", []),
         "recommended_actions": data.get("recommended_actions", []),
         "graph_path": graph_path,
@@ -67,14 +84,16 @@ def _llm_rca(asset_tag: str, issue: str, evidence: list[dict], graph_path: list[
 
 def _extractive_rca(asset_tag: str, issue: str, evidence: list[dict]) -> dict:
     top = evidence[:3]
+    citations = [_citation(h) for h in top]
     return {
         "asset": asset_tag, "issue": issue,
         "likely_causes": [{
             "cause": f"See related records: {top[0]['text'][:160]}…",
             "confidence": round(min(0.6, top[0].get("score", 0.5)), 2),
             "evidence": [h["filename"] for h in top],
-            "citations": [_citation(h) for h in top],
+            "citations": citations,
         }],
+        "citations": citations,
         "missing_checks": [], "recommended_actions": [],
         "note": "extractive fallback (no LLM key configured)",
     }

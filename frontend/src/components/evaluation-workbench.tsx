@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ActivityIcon, GaugeIcon, PlayIcon, TimerIcon } from "lucide-react"
+import { ActivityIcon, GaugeIcon, PlayIcon, RefreshCwIcon, TimerIcon } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +18,8 @@ import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress
 import { Separator } from "@/components/ui/separator"
 import { Spinner } from "@/components/ui/spinner"
 import { getEvaluationRun, startEvaluation } from "@/lib/api/client"
-import type { EvaluationCase, EvaluationMetrics, EvaluationRun } from "@/lib/api/types"
+import type { EvaluationCase, EvaluationMetrics, LatestEvaluationRun } from "@/lib/api/types"
+import { normalizeEvaluationRun, type DisplayEvaluationRun } from "@/lib/evaluation-run"
 import { percent, titleCase } from "@/lib/format"
 
 const metricDefinitions: Array<{ key: keyof EvaluationMetrics; label: string }> = [
@@ -33,22 +34,68 @@ const metricDefinitions: Array<{ key: keyof EvaluationMetrics; label: string }> 
   { key: "ragas_context_recall", label: "RAGAS context recall" },
 ]
 
-export function EvaluationWorkbench({ cases, total }: { cases: EvaluationCase[]; total: number }) {
-  const [run, setRun] = useState<EvaluationRun | null>(null)
+const EVALUATION_POLL_ATTEMPTS = 30
+const EVALUATION_POLL_INTERVAL_MS = 1000
+
+function hydrateLatestRun(latest?: LatestEvaluationRun): DisplayEvaluationRun | null {
+  if (!latest?.id) return null
+  return normalizeEvaluationRun({
+    id: latest.id,
+    status: latest.status,
+    completed_at: latest.completed_at,
+    metrics: latest.metrics,
+    error: latest.error,
+  })
+}
+
+export function EvaluationWorkbench({
+  cases,
+  total,
+  initialRun,
+}: {
+  cases: EvaluationCase[]
+  total: number
+  initialRun?: LatestEvaluationRun
+}) {
+  const [run, setRun] = useState<DisplayEvaluationRun | null>(() => hydrateLatestRun(initialRun))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  async function refreshRun(runId: string) {
+    const current = normalizeEvaluationRun(await getEvaluationRun(runId))
+    setRun(current)
+    if (current.status === "failed") {
+      throw new Error(current.error || `Evaluation run ${current.id} failed.`)
+    }
+    return current
+  }
 
   async function runEvaluation() {
     setBusy(true)
     setError(null)
+    setNotice(null)
+    setRun(null)
     try {
       const started = await startEvaluation()
       setRun({ id: started.run_id, status: started.status })
-      for (let attempt = 0; attempt < 30; attempt += 1) {
-        const current = await getEvaluationRun(started.run_id)
-        setRun(current)
-        if (current.status === "completed" || current.status === "failed") break
-        await new Promise((resolve) => window.setTimeout(resolve, 1000))
+      let completed = false
+
+      for (let attempt = 0; attempt < EVALUATION_POLL_ATTEMPTS; attempt += 1) {
+        const current = await refreshRun(started.run_id)
+        if (current.status === "completed") {
+          completed = true
+          break
+        }
+        await new Promise((resolve) =>
+          window.setTimeout(resolve, EVALUATION_POLL_INTERVAL_MS)
+        )
+      }
+
+      if (!completed) {
+        setNotice(
+          "The run is still active. Automatic polling paused to avoid an endless request loop; use Check latest results to refresh this run."
+        )
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The evaluation run failed.")
@@ -57,6 +104,43 @@ export function EvaluationWorkbench({ cases, total }: { cases: EvaluationCase[];
     }
   }
 
+  async function checkLatestResults() {
+    if (!run) return
+    setBusy(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const current = await refreshRun(run.id)
+      if (current.status !== "completed") {
+        setNotice("The run is still active. Its latest backend state is shown below.")
+      } else if (!current.metrics) {
+        setNotice("The backend marked this run completed but did not return metrics.")
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The evaluation status could not be refreshed.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const needsRefresh = Boolean(run && (!run.metrics || run.status !== "completed"))
+  const statusTitle = !run
+    ? "No completed run loaded"
+    : run.status === "completed" && !run.metrics
+      ? "Completed without metrics"
+      : run.status === "failed"
+        ? "Evaluation failed"
+        : `Evaluation ${run.status}`
+  const statusDescription = !run
+    ? "Start the benchmark to retrieve measured extraction, retrieval, citation, compliance, and RAGAS metrics."
+    : run.status === "completed" && !run.metrics
+      ? `Run ${run.id} completed, but the response did not include a metrics payload.`
+      : run.status === "failed"
+        ? run.error || `Run ${run.id} failed before metrics were produced.`
+        : busy
+          ? `Run ${run.id} is being monitored. Metrics appear when the backend marks it completed.`
+          : `Run ${run.id} is not being polled automatically. Check its latest backend state when ready.`
+
   return (
     <div className="flex flex-col gap-4">
       <Card>
@@ -64,62 +148,82 @@ export function EvaluationWorkbench({ cases, total }: { cases: EvaluationCase[];
           <CardTitle>Benchmark control</CardTitle>
           <CardDescription>{total} labeled cases available from the evaluation service.</CardDescription>
           <CardAction>
-            <Button onClick={runEvaluation} disabled={busy}>
-              {busy ? <Spinner data-icon="inline-start" /> : <PlayIcon data-icon="inline-start" />}
-              {busy ? "Running benchmark" : "Run evaluation"}
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              {needsRefresh ? (
+                <Button variant="outline" onClick={checkLatestResults} disabled={busy}>
+                  {busy ? <Spinner data-icon="inline-start" /> : <RefreshCwIcon data-icon="inline-start" />}
+                  Check latest results
+                </Button>
+              ) : null}
+              <Button onClick={runEvaluation} disabled={busy}>
+                {busy ? <Spinner data-icon="inline-start" /> : <PlayIcon data-icon="inline-start" />}
+                {busy ? "Running benchmark" : "Run evaluation"}
+              </Button>
+            </div>
           </CardAction>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {cases.slice(0, 8).map((item) => <Badge key={item.id} variant="outline">{item.id} · {titleCase(item.category)}</Badge>)}
           </div>
-          {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
+          {error ? (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTitle>Evaluation unavailable</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+          {notice ? (
+            <Alert className="mt-4">
+              <AlertTitle>Run status saved</AlertTitle>
+              <AlertDescription>{notice}</AlertDescription>
+            </Alert>
+          ) : null}
         </CardContent>
       </Card>
 
       {run?.metrics ? (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Evaluation metrics">
+          <section className="grid gap-px border border-border bg-border md:grid-cols-2 xl:grid-cols-3" aria-label="Evaluation metrics">
             {metricDefinitions.map((definition) => {
               const value = run.metrics?.[definition.key]
               if (typeof value !== "number") return null
               return (
-                <Card key={definition.key} size="sm">
-                  <CardHeader>
-                    <CardTitle>{definition.label}</CardTitle>
-                    <CardDescription>Measured from the completed benchmark run.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                <div key={definition.key} className="bg-card p-4">
+                  <div>
+                    <p className="technical-label">Measured score</p>
+                    <h3 className="mt-1 text-sm font-semibold">{definition.label}</h3>
+                  </div>
+                  <div className="mt-6">
                     <Progress value={value * 100}>
                       <ProgressLabel>Score</ProgressLabel>
                       <ProgressValue>{() => percent(value)}</ProgressValue>
                     </Progress>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )
             })}
           </section>
 
-          <section className="grid gap-4 md:grid-cols-3">
-            <Card size="sm">
-              <CardHeader><CardDescription>PlantBrain response</CardDescription><CardTitle className="font-mono text-3xl">{run.metrics.avg_response_time_sec}s</CardTitle><CardAction><TimerIcon className="size-4 text-primary" /></CardAction></CardHeader>
-            </Card>
-            <Card size="sm">
-              <CardHeader><CardDescription>Manual baseline</CardDescription><CardTitle className="font-mono text-3xl">{Math.round(run.metrics.manual_baseline_sec / 60)}m</CardTitle><CardAction><GaugeIcon className="size-4 text-muted-foreground" /></CardAction></CardHeader>
-            </Card>
-            <Card size="sm">
-              <CardHeader><CardDescription>Run status</CardDescription><CardTitle className="font-mono text-2xl">{run.status.toUpperCase()}</CardTitle><CardAction><ActivityIcon className="size-4 text-primary" /></CardAction></CardHeader>
-            </Card>
+          <section className="grid gap-px border border-border bg-border md:grid-cols-3">
+            <div className="bg-card p-5">
+              <div className="flex items-center justify-between"><p className="technical-label">PlantBrain response</p><TimerIcon className="size-4 text-primary" /></div>
+              <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{run.metrics.avg_response_time_sec}s</p>
+            </div>
+            <div className="bg-card p-5">
+              <div className="flex items-center justify-between"><p className="technical-label">Manual baseline</p><GaugeIcon className="size-4 text-muted-foreground" /></div>
+              <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{Math.round(run.metrics.manual_baseline_sec / 60)}m</p>
+            </div>
+            <div className="bg-card p-5">
+              <div className="flex items-center justify-between"><p className="technical-label">Run status</p><ActivityIcon className="size-4 text-primary" /></div>
+              <p className="mt-5 font-mono text-2xl text-primary">{run.status.toUpperCase()}</p>
+            </div>
           </section>
         </>
       ) : (
         <Alert>
           {busy ? <Spinner /> : <ActivityIcon />}
-          <AlertTitle>{run ? `Evaluation ${run.status}` : "No completed run loaded"}</AlertTitle>
-          <AlertDescription>
-            {run ? `Run ${run.id} is being monitored. Metrics appear only when the backend marks it completed.` : "Start the benchmark to retrieve measured extraction, retrieval, citation, compliance, and RAGAS metrics."}
-          </AlertDescription>
+          <AlertTitle>{statusTitle}</AlertTitle>
+          <AlertDescription>{statusDescription}</AlertDescription>
         </Alert>
       )}
 

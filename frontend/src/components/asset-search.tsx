@@ -5,15 +5,6 @@ import Link from "next/link"
 import { ArrowUpRightIcon, SearchIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
@@ -33,45 +24,54 @@ export function AssetSearch({ assets }: { assets: AssetSummary[] }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <Field>
-        <FieldLabel htmlFor="asset-search">Search the plant index</FieldLabel>
-        <InputGroup>
-          <InputGroupAddon><SearchIcon /></InputGroupAddon>
-          <InputGroupInput
-            id="asset-search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Try P-204A"
-            autoComplete="off"
-          />
-        </InputGroup>
-        <FieldDescription>Search by asset tag or equipment type. Results update immediately.</FieldDescription>
-      </Field>
+      <div className="grid gap-4 border border-border bg-card p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <Field>
+          <FieldLabel htmlFor="asset-search">Search the plant index</FieldLabel>
+          <InputGroup>
+            <InputGroupAddon><SearchIcon /></InputGroupAddon>
+            <InputGroupInput
+              id="asset-search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Try P-204A"
+              autoComplete="off"
+            />
+          </InputGroup>
+          <FieldDescription>Search by asset tag or equipment type. Results update immediately.</FieldDescription>
+        </Field>
+        <div className="border-l-2 border-primary pl-3">
+          <p className="font-mono text-2xl font-medium tabular-nums">{results.length}</p>
+          <p className="technical-label mt-1">Matching assets</p>
+        </div>
+      </div>
 
       {results.length ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {results.map((asset) => (
-            <Card key={asset.asset_tag}>
-              <CardHeader>
-                <CardDescription>{asset.asset_type}</CardDescription>
-                <CardTitle className="font-mono text-2xl text-primary">{asset.asset_tag}</CardTitle>
-                <CardAction>
-                  <Link
-                    href={`/assets/${encodeURIComponent(asset.asset_tag)}`}
-                    aria-label={`Open ${asset.asset_tag}`}
-                    className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
-                  >
-                    <ArrowUpRightIcon />
-                  </Link>
-                </CardAction>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                <Badge variant="outline">{asset.document_count} documents</Badge>
+        <div className="border border-border bg-card">
+          <div className="hidden grid-cols-[3rem_9rem_minmax(0,1fr)_auto_2rem] gap-4 border-b border-border px-5 py-3 md:grid">
+            {['No.', 'Asset tag', 'Equipment', 'Operational flags', ''].map((label) => (
+              <span key={label} className="technical-label">{label}</span>
+            ))}
+          </div>
+          {results.map((asset, index) => (
+            <Link
+              key={asset.asset_tag}
+              href={`/assets/${encodeURIComponent(asset.asset_tag)}`}
+              aria-label={`Open ${asset.asset_tag}`}
+              className="group grid gap-3 border-b border-border px-4 py-5 transition-colors last:border-b-0 hover:bg-muted md:grid-cols-[3rem_9rem_minmax(0,1fr)_auto_2rem] md:items-center md:gap-4 md:px-5"
+            >
+              <span className="font-mono text-[0.62rem] text-muted-foreground">{String(index + 1).padStart(2, '0')}</span>
+              <span className="font-mono text-lg font-semibold tracking-[-0.04em] text-primary">{asset.asset_tag}</span>
+              <div>
+                <p className="text-sm font-medium">{asset.asset_type}</p>
+                <p className="mt-1 font-mono text-[0.62rem] text-muted-foreground">{asset.document_count} linked documents</p>
+              </div>
+              <div className="flex flex-wrap gap-2 md:justify-end">
                 {asset.open_risks ? <Badge variant="secondary">{asset.open_risks} open risk</Badge> : null}
                 {asset.compliance_gaps ? <Badge variant="destructive">{asset.compliance_gaps} gap</Badge> : null}
                 {!asset.open_risks && !asset.compliance_gaps ? <Badge variant="outline">No open findings</Badge> : null}
-              </CardContent>
-            </Card>
+              </div>
+              <ArrowUpRightIcon className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />
+            </Link>
           ))}
         </div>
       ) : (

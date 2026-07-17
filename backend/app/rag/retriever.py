@@ -10,14 +10,14 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from app.graph.query import load_graph, related_documents
-from app.ingestion.embed import embed_query
-from app.ingestion.vectorstore import search
+from app.ingestion.vectorstore import search_query
 
 
 def retrieve(db: Session, question: str, *, asset_tag: str | None = None,
              k: int = 6) -> dict:
-    qvec = embed_query(question)
-    evidence: dict[str, dict] = {h["chunk_id"]: h for h in search(db, qvec, k=k)}
+    evidence: dict[str, dict] = {
+        h["chunk_id"]: h for h in search_query(db, question, k=k, asset_tag=asset_tag)
+    }
 
     if asset_tag:
         # graph expansion: pull the top chunk from documents connected to the asset
@@ -25,7 +25,7 @@ def retrieve(db: Session, question: str, *, asset_tag: str | None = None,
         related_ids = {d.split("doc:", 1)[1] for d in related_documents(db, asset_tag)}
         present = {h["document_id"] for h in evidence.values()}
         for doc_id in related_ids - present:
-            hit = _top_chunk_for_doc(db, doc_id, qvec)
+            hit = _top_chunk_for_doc(db, doc_id, question)
             if hit:
                 hit["via_graph"] = True
                 evidence[hit["chunk_id"]] = hit
@@ -61,19 +61,6 @@ def _graph_path(db: Session, asset_tag: str, ranked: list[dict]) -> list[str]:
     return fallback
 
 
-def _top_chunk_for_doc(db: Session, doc_id: str, qvec: list[float]) -> dict | None:
-    from app.ingestion.vectorstore import _literal
-    from sqlalchemy import text
-
-    row = db.execute(text("""
-        SELECT c.id, c.document_id, c.page_number, c.text, d.filename, d.doc_type,
-               1 - (c.embedding <=> CAST(:q AS vector)) AS score
-        FROM chunks c JOIN documents d ON d.id = c.document_id
-        WHERE c.document_id = :doc AND c.embedding IS NOT NULL
-        ORDER BY c.embedding <=> CAST(:q AS vector) LIMIT 1
-    """), {"q": _literal(qvec), "doc": doc_id}).fetchone()
-    if not row:
-        return None
-    return {"chunk_id": row.id, "document_id": row.document_id, "page": row.page_number,
-            "text": row.text, "filename": row.filename, "doc_type": row.doc_type,
-            "score": float(row.score)}
+def _top_chunk_for_doc(db: Session, doc_id: str, question: str) -> dict | None:
+    hits = search_query(db, question, k=1, document_id=doc_id)
+    return hits[0] if hits else None

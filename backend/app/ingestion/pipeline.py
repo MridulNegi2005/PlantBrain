@@ -3,7 +3,8 @@
 Drives the IngestionJob status through the state machine to `completed`. Embeddings
 are computed + stored only on Postgres (pgvector); on SQLite (hermetic tests) that
 step is skipped so extraction/chunking can be tested without downloading a model.
-`graph_building` is a no-op here — the knowledge graph is built in Interval 3.
+The graph is rebuilt after chunk persistence so completed jobs expose consistent
+retrieval and graph state.
 """
 
 from __future__ import annotations
@@ -34,13 +35,23 @@ def process(db: Session, document_id: str, job: models.IngestionJob,
         _fail(db, job, "document not found")
         return
     if compute_embeddings is None:
-        compute_embeddings = db.bind.dialect.name == "postgresql"
+        from app.ingestion.vectorstore import pgvector_ready
+
+        compute_embeddings = pgvector_ready(db)
 
     try:
+        doc.status = "processing"
         _set_status(db, job, "extracting")
         pages = extract_pages(doc.storage_path)
 
         # Replace any previous ingestion output for this document (idempotent re-ingest).
+        old_chunk_ids = [row[0] for row in db.query(models.Chunk.id).filter(
+            models.Chunk.document_id == document_id).all()]
+        if old_chunk_ids:
+            db.query(models.GraphEdge).filter(
+                models.GraphEdge.source_chunk_id.in_(old_chunk_ids)).delete(synchronize_session=False)
+            db.query(models.Entity).filter(
+                models.Entity.source_chunk_id.in_(old_chunk_ids)).delete(synchronize_session=False)
         db.query(models.Chunk).filter(models.Chunk.document_id == document_id).delete()
         db.query(models.DocumentPage).filter(
             models.DocumentPage.document_id == document_id).delete()
@@ -68,7 +79,10 @@ def process(db: Session, document_id: str, job: models.IngestionJob,
             store_embeddings(db, [(cid, v) for (cid, _), v in zip(rows, vecs)])
             db.commit()
 
-        _set_status(db, job, "graph_building")  # KG built in Interval 3
+        _set_status(db, job, "graph_building")
+        from app.graph.builder import build_graph
+
+        build_graph(db)
         doc.status = "completed"
         _set_status(db, job, "completed")
         write_audit(db, action="document.ingested", resource_type="document",
@@ -81,6 +95,9 @@ def process(db: Session, document_id: str, job: models.IngestionJob,
 
 def _fail(db: Session, job: models.IngestionJob, message: str) -> None:
     db.rollback()
+    doc = db.get(models.Document, job.document_id)
+    if doc is not None:
+        doc.status = "failed"
     job.status = "failed"
     job.error = message[:2000]
     db.commit()
@@ -96,9 +113,9 @@ def ingest_document(db: Session, document_id: str,
     return job
 
 
-def run_ingestion_bg(document_id: str, job_id: str) -> None:
+def run_ingestion_bg(document_id: str, job_id: str, bind=None) -> None:
     """Background-task entrypoint: owns its own session (the request session is gone)."""
-    db = SessionLocal()
+    db = SessionLocal() if bind is None else Session(bind=bind)
     try:
         job = db.get(models.IngestionJob, job_id)
         if job is not None:

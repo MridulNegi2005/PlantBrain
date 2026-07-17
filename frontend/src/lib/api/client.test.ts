@@ -5,6 +5,7 @@ import {
   ApiError,
   askCopilot,
   checkCompliance,
+  findSimilarLessons,
   generateRca,
   getAsset,
   getAssetGraph,
@@ -12,8 +13,11 @@ import {
   getAssets,
   getAuditLogs,
   getDocuments,
+  getDocument,
+  getDocumentChunks,
   getEvaluationCases,
   getEvaluationRun,
+  getLatestEvaluationRun,
   getHealth,
   getIngestionJob,
   getSecurityEvents,
@@ -47,10 +51,11 @@ describe("PlantBrain API client", () => {
 
     await getHealth()
 
-    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/health`, {
+    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/health`, expect.objectContaining({
       cache: "no-store",
       headers: {},
-    })
+      signal: expect.any(AbortSignal),
+    }))
   })
 
   it("preserves document query parameters", async () => {
@@ -64,6 +69,8 @@ describe("PlantBrain API client", () => {
   })
 
   it("encodes identifiers placed in request paths", async () => {
+    await getDocument("doc/42")
+    await getDocumentChunks("doc/42")
     await getAsset("P/204 A")
     await getAssetTimeline("P/204 A")
     await getAssetGraph("P/204 A")
@@ -72,6 +79,8 @@ describe("PlantBrain API client", () => {
     await getEvaluationRun("run/42")
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      `${API_URL}/api/documents/doc%2F42`,
+      `${API_URL}/api/documents/doc%2F42/chunks`,
       `${API_URL}/api/assets/P%2F204%20A`,
       `${API_URL}/api/assets/P%2F204%20A/timeline`,
       `${API_URL}/api/assets/P%2F204%20A/graph`,
@@ -118,15 +127,22 @@ describe("PlantBrain API client", () => {
       path: "/api/compliance/check",
       body: { asset_tag: "V-301" },
     },
+    {
+      name: "similar lessons",
+      call: () => findSimilarLessons("seal leakage"),
+      path: "/api/lessons/similar",
+      body: { failure_mode: "seal leakage" },
+    },
   ])("serializes the $name request contract", async ({ call, path, body }) => {
     await call()
 
-    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}${path}`, {
+    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}${path}`, expect.objectContaining({
       cache: "no-store",
       method: "POST",
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" },
-    })
+      signal: expect.any(AbortSignal),
+    }))
   })
 
   it("omits an empty optional asset scope from copilot requests", async () => {
@@ -143,23 +159,26 @@ describe("PlantBrain API client", () => {
     await getEvaluationCases()
     await getAuditLogs()
     await getSecurityEvents()
+    await getLatestEvaluationRun()
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       `${API_URL}/api/assets`,
       `${API_URL}/api/evaluation/cases`,
       `${API_URL}/api/audit-logs`,
       `${API_URL}/api/security-events`,
+      `${API_URL}/api/evaluation/runs`,
     ])
   })
 
   it("starts evaluation runs with the documented POST request", async () => {
     await startEvaluation()
 
-    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/api/evaluation/run`, {
+    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/api/evaluation/run`, expect.objectContaining({
       cache: "no-store",
       method: "POST",
       headers: {},
-    })
+      signal: expect.any(AbortSignal),
+    }))
   })
 
   it("surfaces structured backend errors with status and code", async () => {
@@ -183,13 +202,56 @@ describe("PlantBrain API client", () => {
     } satisfies Partial<ApiError>)
   })
 
+  it("unwraps FastAPI HTTPException error details", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          detail: {
+            error: {
+              code: "not_found",
+              message: "Document doc_missing not found.",
+            },
+          },
+        },
+        404
+      )
+    )
+
+    await expect(getDocument("doc_missing")).rejects.toMatchObject({
+      name: "ApiError",
+      message: "Document doc_missing not found.",
+      status: 404,
+      code: "not_found",
+    } satisfies Partial<ApiError>)
+  })
+
   it("falls back to the HTTP status when an error body is not JSON", async () => {
     fetchMock.mockResolvedValueOnce(
       new Response("gateway unavailable", { status: 502 })
     )
 
     await expect(getDocuments()).rejects.toEqual(
-      new ApiError("Request failed with status 502", 502)
+      new ApiError("The PlantBrain service is temporarily unavailable.", 502)
+    )
+  })
+
+  it("normalizes request timeouts without leaking transport details", async () => {
+    fetchMock.mockRejectedValueOnce(new DOMException("timed out", "TimeoutError"))
+
+    await expect(getHealth()).rejects.toEqual(
+      new ApiError(
+        "The PlantBrain service did not respond in time.",
+        408,
+        "request_timeout"
+      )
+    )
+  })
+
+  it("normalizes network failures without leaking transport details", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("fetch failed: ECONNREFUSED"))
+
+    await expect(getHealth()).rejects.toEqual(
+      new ApiError("The PlantBrain backend is unavailable.", 0, "network_error")
     )
   })
 })

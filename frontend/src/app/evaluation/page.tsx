@@ -1,12 +1,17 @@
 import { DataUnavailable } from "@/components/data-unavailable"
 import { EvaluationWorkbench } from "@/components/evaluation-workbench"
 import { PageHeader } from "@/components/page-header"
-import { getEvaluationCases } from "@/lib/api/client"
+import { getEvaluationCases, getLatestEvaluationRun } from "@/lib/api/client"
 
 export const metadata = { title: "Evaluation" }
 
 export default async function EvaluationPage() {
-  const result = await getEvaluationCases().catch(() => null)
+  const [casesResult, latestResult] = await Promise.allSettled([
+    getEvaluationCases(),
+    getLatestEvaluationRun(),
+  ])
+  const result = casesResult.status === "fulfilled" ? casesResult.value : null
+  const latest = latestResult.status === "fulfilled" ? latestResult.value : undefined
 
   return (
     <div className="flex flex-col gap-6">
@@ -17,7 +22,7 @@ export default async function EvaluationPage() {
         status="MEASURED RESULTS ONLY"
       />
       {!result ? <DataUnavailable label="Evaluation cases" /> : null}
-      {result ? <EvaluationWorkbench cases={result.items} total={result.total} /> : null}
+      {result ? <EvaluationWorkbench cases={result.items} total={result.total} initialRun={latest} /> : null}
     </div>
   )
 }

@@ -39,11 +39,11 @@ def test_upload_rejects_bad_content_type(client):
 def test_upload_persists_and_lists(client):
     resp = client.post(
         "/api/documents/upload",
-        files={"file": ("WO-999.pdf", b"%PDF-1.4 fake content", "application/pdf")},
+        files={"file": ("WO-999.txt", b"P-204A work order", "text/plain")},
     )
     assert resp.status_code == 201
     doc = resp.json()
-    assert doc["filename"] == "WO-999.pdf"
+    assert doc["filename"] == "WO-999.txt"
     assert len(doc["hash_sha256"]) == 64
 
     listed = client.get("/api/documents").json()
@@ -54,7 +54,7 @@ def test_upload_persists_and_lists(client):
 def test_ingest_creates_job(client):
     doc = client.post(
         "/api/documents/upload",
-        files={"file": ("IR-42.pdf", b"%PDF-1.4 inspection", "application/pdf")},
+        files={"file": ("IR-42.txt", b"P-204A inspection record", "text/plain")},
     ).json()
     resp = client.post(f"/api/documents/{doc['id']}/ingest")
     assert resp.status_code == 202
@@ -64,18 +64,56 @@ def test_ingest_creates_job(client):
     job_status = client.get(f"/api/ingestion-jobs/{job['ingestion_job_id']}").json()
     assert job_status["document_id"] == doc["id"]
     assert "uploaded" in job_status["states"]
+    assert job_status["status"] == "completed"
 
 
 def test_document_chunks_shape(client):
     doc = client.post(
         "/api/documents/upload",
-        files={"file": ("M-1.pdf", b"%PDF-1.4 manual", "application/pdf")},
+        files={"file": ("M-1.txt", b"manual", "text/plain")},
     ).json()
     resp = client.get(f"/api/documents/{doc['id']}/chunks")
     assert resp.status_code == 200
     body = resp.json()
     assert "items" in body and "total" in body
-    assert body["items"][0]["chunk_id"]
+    assert body == {"items": [], "total": 0, "stub": True}
+
+
+def test_upload_rejects_spoofed_extension(client):
+    resp = client.post(
+        "/api/documents/upload",
+        files={"file": ("manual.pdf", b"not a PDF", "text/plain")},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "file_type_mismatch"
+
+
+def test_upload_rejects_corrupt_pdf(client):
+    resp = client.post(
+        "/api/documents/upload",
+        files={"file": ("manual.pdf", b"%PDF-1.4 corrupt", "application/pdf")},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "invalid_file"
+
+
+def test_validation_errors_use_contract_envelope(client):
+    resp = client.post("/api/copilot/ask", json={})
+    assert resp.status_code == 422
+    error = resp.json()["error"]
+    assert error["code"] == "validation_error"
+    assert all("input" not in detail and "ctx" not in detail for detail in error["details"])
+
+
+def test_health_is_degraded_when_database_is_unavailable(client, monkeypatch):
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "check_connection", lambda: False)
+    resp = client.get("/health")
+    assert resp.status_code == 503
+    assert resp.json() == {
+        "status": "degraded", "db_connected": False, "pgvector_enabled": False,
+    }
 
 
 def test_upload_writes_audit_log(client):
@@ -86,3 +124,19 @@ def test_upload_writes_audit_log(client):
     logs = client.get("/api/audit-logs").json()
     actions = {log["action"] for log in logs["items"]}
     assert "document.upload" in actions
+
+
+def test_audit_total_is_not_capped_and_timestamp_is_utc(client):
+    from app.db.crud import write_audit
+    from app.db.session import get_db
+
+    db = next(client.app.dependency_overrides[get_db]())
+    for index in range(205):
+        write_audit(db, action=f"test.{index}")
+    db.commit()
+
+    body = client.get("/api/audit-logs").json()
+    assert body["total"] == 205
+    assert len(body["items"]) == 200
+    assert body["items"][0]["created_at"].endswith("Z")
+    assert body["items"][0]["actor"] == "system"

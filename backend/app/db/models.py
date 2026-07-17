@@ -1,9 +1,8 @@
 """SQLAlchemy models — schema per build plan §10.2.
 
-Interval 1 actively uses: Plant, Asset, Document, DocumentPage, IngestionJob,
-AuditLog. Chunk/Entity/GraphNode/GraphEdge and the QA/eval tables are defined now
-so the schema is complete and stable, and get populated in Intervals 2-5.
-Vectors are NOT stored here (server has no pgvector) — Chroma handles those.
+The relational schema supports the full ingestion, graph, audit, security, and
+evaluation flows. Postgres deployments add the pgvector embedding column during
+bootstrap; SQLite uses the same mapped tables with BM25 retrieval.
 """
 
 import datetime as dt
@@ -94,7 +93,7 @@ class Chunk(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     bbox: Mapped[dict | None] = mapped_column(JSON)
     asset_tags: Mapped[list] = mapped_column(JSON, default=list)
-    embedding_ref: Mapped[str | None] = mapped_column(String)  # id in the Chroma store
+    embedding_ref: Mapped[str | None] = mapped_column(String)  # reserved for external indexes
     meta: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[dt.datetime] = _now_col()
 

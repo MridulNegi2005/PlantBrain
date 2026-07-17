@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useMemo, useState } from "react"
+import { FormEvent, useMemo, useReducer, useState } from "react"
 import { GitBranchIcon, SearchIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -21,8 +21,10 @@ import { Spinner } from "@/components/ui/spinner"
 import { getAssetGraph } from "@/lib/api/client"
 import type { GraphNode, KnowledgeGraph } from "@/lib/api/types"
 import { percent, titleCase } from "@/lib/format"
+import { idleRequestState, requestStateReducer, type RequestState } from "@/lib/request-state"
 
 type PositionedNode = GraphNode & { x: number; y: number }
+type LoadedGraph = { assetTag: string; graph: KnowledgeGraph }
 
 function positionNodes(nodes: GraphNode[]): PositionedNode[] {
   const centerX = 400
@@ -44,12 +46,23 @@ function positionNodes(nodes: GraphNode[]): PositionedNode[] {
 
 export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: KnowledgeGraph | null; initialAsset: string }) {
   const [assetTag, setAssetTag] = useState(initialAsset)
-  const [graph, setGraph] = useState(initialGraph)
+  const initialRequest: RequestState<LoadedGraph> = initialGraph
+    ? {
+        status: "success",
+        data: { assetTag: initialAsset, graph: initialGraph },
+        error: null,
+      }
+    : idleRequestState<LoadedGraph>()
+  const [request, dispatch] = useReducer(
+    requestStateReducer<LoadedGraph>,
+    initialRequest
+  )
+  const graph = request.data?.graph ?? null
+  const loadedAsset = request.data?.assetTag ?? null
   const [selectedNode, setSelectedNode] = useState<string | null>(
     initialGraph?.nodes.find((node) => node.type === "Asset")?.id ?? null
   )
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const busy = request.status === "loading"
   const nodes = useMemo(() => positionNodes(graph?.nodes ?? []), [graph])
   const positions = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
 
@@ -57,16 +70,20 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
     event.preventDefault()
     const tag = assetTag.trim().toUpperCase()
     if (!tag) return
-    setBusy(true)
-    setError(null)
+    dispatch({ type: "start" })
+    setSelectedNode(null)
     try {
       const next = await getAssetGraph(tag)
-      setGraph(next)
+      dispatch({ type: "succeed", data: { assetTag: tag, graph: next } })
       setSelectedNode(next.nodes.find((node) => node.type === "Asset")?.id ?? null)
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The graph could not be loaded.")
-    } finally {
-      setBusy(false)
+      dispatch({
+        type: "fail",
+        error:
+          caught instanceof Error
+            ? caught.message
+            : "The graph could not be loaded.",
+      })
     }
   }
 
@@ -97,7 +114,7 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                 </Button>
               </div>
               <FieldDescription>Click a node to isolate its evidence-backed relationships.</FieldDescription>
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              {request.error ? <p className="text-sm text-destructive">{request.error}</p> : null}
             </Field>
           </form>
         </CardContent>
@@ -108,11 +125,11 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
           <Card>
             <CardHeader>
               <CardTitle>Relationship canvas</CardTitle>
-              <CardDescription>{graph.nodes.length} nodes · {graph.edges.length} provenance-scored edges</CardDescription>
+              <CardDescription>{graph.nodes.length} nodes · {graph.edges.length} relationships; confidence is shown when available</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-hidden rounded-xl border bg-background/50">
-                <svg viewBox="0 0 800 460" role="img" aria-label={`Knowledge graph for ${assetTag}`} className="h-auto min-h-[24rem] w-full">
+              <div className="overflow-hidden rounded-sm border bg-background">
+                <svg viewBox="0 0 800 460" role="img" aria-label={`Knowledge graph for ${loadedAsset}`} className="h-auto min-h-[24rem] w-full">
                   <defs>
                     <marker id="graph-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
                       <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted-foreground)" />
@@ -148,10 +165,19 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") setSelectedNode(node.id)
                         }}
-                        className="cursor-pointer outline-none"
+                        className="cursor-pointer outline-none focus:[&>rect]:stroke-[var(--ring)]"
                         opacity={connected ? 1 : 0.35}
                       >
-                        <circle r={node.type === "Asset" ? 42 : 34} fill={active ? "var(--primary)" : "var(--card)"} stroke={active ? "var(--primary)" : "var(--border)"} strokeWidth={active ? 3 : 2} />
+                        <rect
+                          x={node.type === "Asset" ? -52 : -45}
+                          y={node.type === "Asset" ? -30 : -26}
+                          width={node.type === "Asset" ? 104 : 90}
+                          height={node.type === "Asset" ? 60 : 52}
+                          rx="2"
+                          fill={active ? "var(--primary)" : "var(--card)"}
+                          stroke={active ? "var(--primary)" : "var(--border)"}
+                          strokeWidth={active ? 3 : 2}
+                        />
                         <text textAnchor="middle" y="-3" fill={active ? "var(--primary-foreground)" : "var(--foreground)"} fontSize="12" fontWeight="650">{node.label}</text>
                         <text textAnchor="middle" y="15" fill={active ? "var(--primary-foreground)" : "var(--muted-foreground)"} fontSize="8" fontFamily="var(--font-geist-mono)">{node.type.toUpperCase()}</text>
                       </g>
@@ -173,7 +199,9 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                   {connectedEdges.map((edge, index) => (
                     <div key={`${edge.source}-${edge.type}-${index}`}>
                       <div className="py-2">
-                        <Badge variant="outline">{percent(edge.confidence)} confidence</Badge>
+                        <Badge variant="outline">
+                          {edge.confidence == null ? "Confidence not scored" : `${percent(edge.confidence)} confidence`}
+                        </Badge>
                         <p className="mt-2 text-sm font-medium">{titleCase(edge.type)}</p>
                         <p className="mt-1 font-mono text-[0.68rem] leading-relaxed text-muted-foreground">{edge.source} → {edge.target}</p>
                       </div>
@@ -189,9 +217,13 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
       ) : (
         <Empty className="min-h-[30rem] border">
           <EmptyHeader>
-            <EmptyMedia variant="icon"><GitBranchIcon /></EmptyMedia>
-            <EmptyTitle>No graph loaded</EmptyTitle>
-            <EmptyDescription>Start the backend or enter an asset tag with graph data.</EmptyDescription>
+            <EmptyMedia variant="icon">{busy ? <Spinner /> : <GitBranchIcon />}</EmptyMedia>
+            <EmptyTitle>{busy ? `Loading ${assetTag.trim().toUpperCase()}` : "No graph loaded"}</EmptyTitle>
+            <EmptyDescription>
+              {busy
+                ? "The previous graph has been cleared while this asset is retrieved."
+                : "Start the backend or enter an asset tag with graph data."}
+            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       )}

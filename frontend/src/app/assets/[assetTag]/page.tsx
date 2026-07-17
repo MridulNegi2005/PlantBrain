@@ -19,8 +19,8 @@ import { getAsset, getAssetTimeline, getDocuments } from "@/lib/api/client"
 import { formatDate, titleCase } from "@/lib/format"
 
 export default async function AssetProfilePage({ params }: { params: Promise<{ assetTag: string }> }) {
-  const { assetTag: encodedTag } = await params
-  const assetTag = decodeURIComponent(encodedTag).toUpperCase()
+  const { assetTag: rawTag } = await params
+  const assetTag = rawTag.toUpperCase()
   const documentQuery = new URLSearchParams({ asset_tag: assetTag })
   const [assetResult, timelineResult, documentsResult] = await Promise.allSettled([
     getAsset(assetTag),
@@ -50,14 +50,24 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
       <PageHeader
         eyebrow={asset.asset_type}
         title={asset.asset_tag}
-        description={asset.summary}
+        description={asset.summary ?? "No operational summary has been recorded for this asset."}
         status={asset.plant_id.toUpperCase()}
       />
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <Card size="sm"><CardHeader><CardDescription>Linked evidence</CardDescription><CardTitle className="font-mono text-3xl">{asset.document_count}</CardTitle></CardHeader></Card>
-        <Card size="sm"><CardHeader><CardDescription>Open risks</CardDescription><CardTitle className="font-mono text-3xl">{asset.open_risks}</CardTitle></CardHeader></Card>
-        <Card size="sm"><CardHeader><CardDescription>Compliance gaps</CardDescription><CardTitle className="font-mono text-3xl">{asset.compliance_gaps}</CardTitle></CardHeader></Card>
+      <section className="grid divide-y divide-border border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0" aria-label="Asset metrics">
+        {[
+          ["Evidence", "Linked records", asset.document_count],
+          ["Risk", "Open findings", asset.open_risks],
+          ["Compliance", "Evidence gaps", asset.compliance_gaps],
+        ].map(([code, label, value]) => (
+          <div key={String(code)} className="p-5">
+            <div className="flex items-center justify-between gap-4">
+              <p className="technical-label">{String(code)}</p>
+              <p className="font-mono text-[0.62rem] text-muted-foreground uppercase">{String(label)}</p>
+            </div>
+            <p className="mt-6 font-mono text-5xl tracking-[-0.08em]">{Number(value)}</p>
+          </div>
+        ))}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
@@ -68,7 +78,7 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
           </CardHeader>
           <CardContent className="evidence-spine flex flex-col gap-5 pl-8">
             {timeline.map((item) => (
-              <article key={`${item.type}-${item.id}`} className="relative rounded-lg border bg-background/50 p-4 before:absolute before:-left-[1.92rem] before:top-5 before:size-3 before:rounded-full before:border-2 before:border-primary before:bg-background">
+              <article key={`${item.type}-${item.id}`} className="relative rounded-sm border bg-background p-4 before:absolute before:-left-[1.92rem] before:top-5 before:size-3 before:border-2 before:border-primary before:bg-background">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{titleCase(item.type)}</Badge>
@@ -77,7 +87,12 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
                   <time className="font-mono text-xs text-muted-foreground">{formatDate(item.date)}</time>
                 </div>
                 <p className="mt-3 text-sm font-medium">{item.title}</p>
-                <p className="mt-1 font-mono text-[0.68rem] text-muted-foreground">Evidence: {item.document_id}</p>
+                <Link
+                  href={`/documents/${encodeURIComponent(item.document_id)}`}
+                  className="mt-2 inline-flex font-mono text-[0.68rem] text-primary underline-offset-4 hover:underline"
+                >
+                  Open evidence: {item.document_id}
+                </Link>
               </article>
             ))}
           </CardContent>
@@ -94,7 +109,12 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
               <div key={document.id}>
                 <div className="flex items-start justify-between gap-3 py-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{document.filename}</p>
+                    <Link
+                      href={`/documents/${encodeURIComponent(document.id)}`}
+                      className="block truncate text-sm font-medium underline-offset-4 hover:text-primary hover:underline"
+                    >
+                      {document.filename}
+                    </Link>
                     <p className="mt-1 text-xs text-muted-foreground">{titleCase(document.doc_type)}</p>
                   </div>
                   <StatusBadge status={document.status} />

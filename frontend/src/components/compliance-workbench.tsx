@@ -1,8 +1,9 @@
 "use client"
 
-import { FormEvent, useState } from "react"
-import { ClipboardCheckIcon, FileWarningIcon, ShieldCheckIcon } from "lucide-react"
+import { FormEvent, useReducer, useState } from "react"
+import { CircleHelpIcon, ClipboardCheckIcon, FileWarningIcon, ShieldCheckIcon } from "lucide-react"
 
+import { CitationList } from "@/components/citation-list"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,23 +20,34 @@ import { Spinner } from "@/components/ui/spinner"
 import { StatusBadge } from "@/components/status-badge"
 import { checkCompliance } from "@/lib/api/client"
 import type { ComplianceReport } from "@/lib/api/types"
+import { titleCase } from "@/lib/format"
+import { idleRequestState, requestStateReducer } from "@/lib/request-state"
 
 export function ComplianceWorkbench() {
   const [assetTag, setAssetTag] = useState("V-301")
-  const [report, setReport] = useState<ComplianceReport | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [request, dispatch] = useReducer(
+    requestStateReducer<ComplianceReport>,
+    idleRequestState<ComplianceReport>()
+  )
+  const report = request.data
+  const busy = request.status === "loading"
 
   async function run(event: FormEvent) {
     event.preventDefault()
-    setBusy(true)
-    setError(null)
+    dispatch({ type: "start" })
     try {
-      setReport(await checkCompliance(assetTag.trim().toUpperCase()))
+      dispatch({
+        type: "succeed",
+        data: await checkCompliance(assetTag.trim().toUpperCase()),
+      })
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The compliance check could not be completed.")
-    } finally {
-      setBusy(false)
+      dispatch({
+        type: "fail",
+        error:
+          caught instanceof Error
+            ? caught.message
+            : "The compliance check could not be completed.",
+      })
     }
   }
 
@@ -53,11 +65,11 @@ export function ComplianceWorkbench() {
                 <FieldLabel htmlFor="compliance-asset">Asset tag</FieldLabel>
                 <InputGroup>
                   <InputGroupAddon><ClipboardCheckIcon /></InputGroupAddon>
-                  <InputGroupInput id="compliance-asset" value={assetTag} onChange={(event) => setAssetTag(event.target.value.toUpperCase())} />
+                  <InputGroupInput id="compliance-asset" value={assetTag} maxLength={64} onChange={(event) => setAssetTag(event.target.value.toUpperCase())} />
                 </InputGroup>
                 <FieldDescription>V-301 is prepared with an intentional certificate gap.</FieldDescription>
               </Field>
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              {request.error ? <p className="text-sm text-destructive">{request.error}</p> : null}
               <Button type="submit" disabled={!assetTag.trim() || busy}>
                 {busy ? <Spinner data-icon="inline-start" /> : <ClipboardCheckIcon data-icon="inline-start" />}
                 {busy ? "Checking" : "Check evidence"}
@@ -72,7 +84,7 @@ export function ComplianceWorkbench() {
           <Card>
             <CardHeader>
               <CardDescription>{report.asset}</CardDescription>
-              <CardTitle>{report.requirement}</CardTitle>
+              <CardTitle>{report.requirement ?? "Requirement not identified"}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               <StatusBadge status={report.status} />
@@ -86,13 +98,37 @@ export function ComplianceWorkbench() {
               <AlertTitle>Required evidence is missing</AlertTitle>
               <AlertDescription>{report.missing_evidence ?? "The API did not specify the missing evidence."}</AlertDescription>
             </Alert>
-          ) : (
+          ) : report.status === "ok" || report.status === "pass" ? (
             <Alert>
               <ShieldCheckIcon />
               <AlertTitle>Evidence requirement satisfied</AlertTitle>
               <AlertDescription>The returned packet supports this compliance requirement.</AlertDescription>
             </Alert>
+          ) : (
+            <Alert>
+              <CircleHelpIcon />
+              <AlertTitle>Compliance result is inconclusive</AlertTitle>
+              <AlertDescription>
+                The backend could not determine a pass or gap. Review the evidence packet before taking action.
+              </AlertDescription>
+            </Alert>
           )}
+
+          {report.note ? (
+            <Alert>
+              <CircleHelpIcon />
+              <AlertTitle>Backend note</AlertTitle>
+              <AlertDescription>{report.note}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          {report.reason ? (
+            <Alert>
+              <CircleHelpIcon />
+              <AlertTitle>Why the result is inconclusive</AlertTitle>
+              <AlertDescription>{titleCase(report.reason)}</AlertDescription>
+            </Alert>
+          ) : null}
 
           <Card>
             <CardHeader>
@@ -103,14 +139,23 @@ export function ComplianceWorkbench() {
               {report.evidence_found.map((evidence) => <Badge key={evidence} variant="outline">{evidence}</Badge>)}
               {!report.evidence_found.length ? <p className="text-sm text-muted-foreground">No supporting evidence was returned.</p> : null}
             </CardContent>
+            {report.citations ? (
+              <CardContent className="border-t border-border pt-4">
+                <CitationList citations={report.citations} />
+              </CardContent>
+            ) : null}
           </Card>
         </div>
       ) : (
         <Card className="min-h-[28rem] items-center justify-center">
           <CardContent className="text-center">
-            <ClipboardCheckIcon className="mx-auto size-8 text-muted-foreground" />
-            <p className="mt-4 font-medium">No evidence check run</p>
-            <p className="mt-1 text-sm text-muted-foreground">Run V-301 to inspect the missing pressure-test certificate story.</p>
+            {busy ? <Spinner className="mx-auto size-8" /> : <ClipboardCheckIcon className="mx-auto size-8 text-muted-foreground" />}
+            <p className="mt-4 font-medium">{busy ? "Checking the evidence packet" : "No evidence check run"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {busy
+                ? "The previous result has been cleared while this asset is checked."
+                : "Run V-301 to inspect the missing pressure-test certificate story."}
+            </p>
           </CardContent>
         </Card>
       )}

@@ -46,7 +46,7 @@ def ensure_pgvector() -> bool:
     """Enable pgvector if available on the server. Used by the bootstrap script.
 
     Returns True if enabled afterwards, False if it could not be enabled (e.g. the
-    extension is not installed) — callers fall back to an embedded store (Chroma).
+    extension is not installed). Retrieval then uses the BM25 fallback.
     """
     try:
         with engine.begin() as conn:

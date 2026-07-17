@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     postgres_password: str = ""
     postgres_host: str = "localhost"
     postgres_port: int = 5432
+    database_url: str = ""
 
     # LLM (Interval 3+). OpenAI-compatible client so we can point at Groq (free tier)
     # now or a local Ollama later by changing only these values.
@@ -28,9 +29,12 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me-in-production"
     cors_origins: str = "http://localhost:3000"
     max_upload_mb: int = 20
+    max_bm25_chunks: int = 5_000
 
     @property
-    def sqlalchemy_url(self) -> URL:
+    def sqlalchemy_url(self) -> URL | str:
+        if self.database_url:
+            return self.database_url
         return URL.create(
             "postgresql+psycopg",
             username=self.postgres_user,

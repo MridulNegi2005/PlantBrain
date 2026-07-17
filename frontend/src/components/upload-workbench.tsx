@@ -3,12 +3,13 @@
 import { useRef, useState } from "react"
 import {
   CheckIcon,
-  CircleDashedIcon,
   FileUpIcon,
+  RefreshCwIcon,
   ShieldCheckIcon,
   XIcon,
 } from "lucide-react"
 
+import { IngestionTimeline } from "@/components/ingestion-timeline"
 import { StatusBadge } from "@/components/status-badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -22,21 +23,14 @@ import {
 } from "@/components/ui/card"
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
 import { getIngestionJob, ingestDocument, uploadDocument } from "@/lib/api/client"
-import type { DocumentStatus, IngestionJob, UploadedDocument } from "@/lib/api/types"
-import { titleCase } from "@/lib/format"
+import type { IngestionJob, UploadedDocument } from "@/lib/api/types"
+import {
+  INGESTION_POLL_ATTEMPTS,
+  INGESTION_POLL_INTERVAL_MS,
+} from "@/lib/ingestion"
 import { cn } from "@/lib/utils"
-
-const states: DocumentStatus[] = [
-  "uploaded",
-  "extracting",
-  "chunking",
-  "embedding",
-  "graph_building",
-  "completed",
-]
 
 const allowedExtensions = ["pdf", "png", "jpg", "jpeg", "csv", "xlsx", "txt"]
 const maxSizeBytes = 20 * 1024 * 1024
@@ -54,37 +48,61 @@ export function UploadWorkbench() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [uploaded, setUploaded] = useState<UploadedDocument | null>(null)
+  const [jobId, setJobId] = useState<string | null>(null)
   const [job, setJob] = useState<IngestionJob | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   function chooseFile(nextFile: File | undefined) {
     if (!nextFile) return
     const validationError = validateFile(nextFile)
     setError(validationError)
-    if (validationError) return
-    setFile(nextFile)
     setUploaded(null)
     setJob(null)
+    setJobId(null)
+    setNotice(null)
+    if (validationError) {
+      setFile(null)
+      if (inputRef.current) inputRef.current.value = ""
+      return
+    }
+    setFile(nextFile)
   }
 
   async function runUpload() {
     if (!file) return
     setBusy(true)
     setError(null)
+    setNotice(null)
     try {
       const document = await uploadDocument(file)
       setUploaded(document)
       const queued = await ingestDocument(document.id)
+      setJobId(queued.ingestion_job_id)
+      let reachedTerminalState = false
 
-      for (let attempt = 0; attempt < 45; attempt += 1) {
+      for (let attempt = 0; attempt < INGESTION_POLL_ATTEMPTS; attempt += 1) {
         const current = await getIngestionJob(queued.ingestion_job_id)
         setJob(current)
-        if (current.status === "completed") break
+        if (current.status === "completed") {
+          reachedTerminalState = true
+          break
+        }
         if (current.status === "failed") {
           throw new Error(current.error ?? "The ingestion job failed.")
         }
-        await new Promise((resolve) => window.setTimeout(resolve, 900))
+        if (attempt < INGESTION_POLL_ATTEMPTS - 1) {
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, INGESTION_POLL_INTERVAL_MS)
+          )
+        }
+      }
+
+      if (!reachedTerminalState) {
+        setNotice(
+          "The job is still running. Automatic polling paused to avoid an endless request loop; its latest state remains visible."
+        )
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The upload could not be completed.")
@@ -93,8 +111,28 @@ export function UploadWorkbench() {
     }
   }
 
+  async function checkLatestState() {
+    if (!jobId) return
+    setBusy(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const current = await getIngestionJob(jobId)
+      setJob(current)
+      if (current.status === "failed") {
+        throw new Error(current.error ?? "The ingestion job failed.")
+      }
+      if (current.status !== "completed") {
+        setNotice("The job is still active. Its latest backend state is shown in the pipeline.")
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The ingestion state could not be refreshed.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const currentIndex = job?.current_state_index ?? (uploaded ? 0 : -1)
-  const progress = Math.max(0, ((currentIndex + 1) / states.length) * 100)
 
   return (
     <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -110,8 +148,8 @@ export function UploadWorkbench() {
               <button
                 type="button"
                 className={cn(
-                  "flex min-h-56 w-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-background/50 p-6 text-center transition-colors hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                  file && "border-primary/60 bg-primary/5"
+                  "flex min-h-56 w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-sm border border-dashed bg-background p-6 text-center transition-colors hover:border-primary hover:bg-muted focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                  file && "border-primary bg-muted"
                 )}
                 onClick={() => inputRef.current?.click()}
                 onDragOver={(event) => event.preventDefault()}
@@ -120,7 +158,7 @@ export function UploadWorkbench() {
                   chooseFile(event.dataTransfer.files[0])
                 }}
               >
-                <span className="flex size-12 items-center justify-center rounded-full border bg-card text-primary">
+                <span className="flex size-12 items-center justify-center rounded-sm border bg-card text-primary">
                   <FileUpIcon className="size-5" />
                 </span>
                 <span>
@@ -137,7 +175,7 @@ export function UploadWorkbench() {
                 id="evidence-file"
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx,.txt"
-                className="sr-only"
+                className="hidden"
                 aria-invalid={Boolean(error)}
                 onChange={(event) => chooseFile(event.target.files?.[0])}
               />
@@ -150,10 +188,18 @@ export function UploadWorkbench() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheckIcon className="size-4" /> Server-side type, size, and hash checks still apply.
           </div>
-          <Button onClick={runUpload} disabled={!file || busy}>
-            {busy ? <Spinner data-icon="inline-start" /> : <FileUpIcon data-icon="inline-start" />}
-            {busy ? "Processing" : "Upload and ingest"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {jobId && job?.status !== "completed" && job?.status !== "failed" ? (
+              <Button variant="outline" onClick={checkLatestState} disabled={busy}>
+                <RefreshCwIcon data-icon="inline-start" />
+                Check latest
+              </Button>
+            ) : null}
+            <Button onClick={runUpload} disabled={!file || busy}>
+              {busy ? <Spinner data-icon="inline-start" /> : <FileUpIcon data-icon="inline-start" />}
+              {busy ? "Processing" : "Upload and ingest"}
+            </Button>
+          </div>
         </CardFooter>
       </Card>
 
@@ -163,35 +209,10 @@ export function UploadWorkbench() {
           <CardDescription>One job across extraction, chunking, embeddings, and graph construction.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <Progress value={progress}>
-            <ProgressLabel>Knowledge pipeline</ProgressLabel>
-            <ProgressValue />
-          </Progress>
-
-          <ol className="evidence-spine flex flex-col gap-5 pl-8" aria-label="Ingestion stages">
-            {states.map((state, index) => {
-              const completed = currentIndex > index || job?.status === "completed"
-              const current = currentIndex === index && job?.status !== "completed"
-              return (
-                <li key={state} className="relative min-h-10 before:absolute before:-left-[1.92rem] before:top-1 before:size-3 before:rounded-full before:border-2 before:border-primary before:bg-background">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className={cn("text-sm font-medium", index > currentIndex && "text-muted-foreground")}>{titleCase(state)}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {state === "uploaded" && "File accepted and fingerprinted"}
-                        {state === "extracting" && "Text, tables, and OCR content extracted"}
-                        {state === "chunking" && "Evidence split with page provenance"}
-                        {state === "embedding" && "Retrieval vectors generated"}
-                        {state === "graph_building" && "Assets and relationships connected"}
-                        {state === "completed" && "Document available to search and agents"}
-                      </p>
-                    </div>
-                    {completed ? <CheckIcon className="size-4 text-primary" /> : current ? <Spinner /> : <CircleDashedIcon className="size-4 text-muted-foreground" />}
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
+          <IngestionTimeline
+            currentIndex={currentIndex}
+            status={job?.status ?? uploaded?.status}
+          />
 
           {uploaded ? (
             <Alert>
@@ -205,6 +226,12 @@ export function UploadWorkbench() {
           ) : (
             <p className="text-sm text-muted-foreground">Choose a file to begin. Pipeline events will appear here from the ingestion job endpoint.</p>
           )}
+          {notice ? (
+            <Alert>
+              <AlertTitle>Polling paused</AlertTitle>
+              <AlertDescription>{notice}</AlertDescription>
+            </Alert>
+          ) : null}
         </CardContent>
       </Card>
     </div>

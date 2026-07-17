@@ -19,7 +19,7 @@ SYSTEM = (
 )
 
 INSTRUCTIONS = (
-    'Return JSON: {"requirement": str, "status": "gap"|"ok", '
+    'Return JSON: {"requirement": str, "status": "gap"|"pass", '
     '"evidence_found": [source numbers], "missing_evidence": str, '
     '"risk_level": "high"|"medium"|"low"}. Pick the single most important requirement '
     'at risk for this asset.'
@@ -35,6 +35,12 @@ def check(db: Session, asset_tag: str) -> dict:
         return {"asset": asset_tag, "requirement": None, "status": "unknown",
                 "evidence_found": [], "missing_evidence": None, "risk_level": "low",
                 "reason": "no_supporting_evidence"}
+
+    from app.security.injection import check_evidence
+    if check_evidence(db, evidence):
+        return {"asset": asset_tag, "requirement": None, "status": "unknown",
+                "evidence_found": [], "citations": [], "missing_evidence": None,
+                "risk_level": "low", "reason": "unsafe_evidence"}
 
     if llm.available():
         try:
@@ -52,10 +58,17 @@ def _llm_check(asset_tag: str, evidence: list[dict]) -> dict:
                           {"role": "user", "content": user}], temperature=0.0)
     idxs = [i for i in data.get("evidence_found", [])
             if isinstance(i, int) and 1 <= i <= len(evidence)]
+    status = data.get("status")
+    if status == "ok":  # tolerate older providers, but normalize the API contract
+        status = "pass"
+    if status not in {"pass", "gap"}:
+        status = "unknown"
+    if not idxs:
+        status = "unknown"
     return {
         "asset": asset_tag,
         "requirement": data.get("requirement"),
-        "status": data.get("status", "unknown"),
+        "status": status,
         "evidence_found": [evidence[i - 1]["filename"] for i in idxs],
         "citations": [_citation(evidence[i - 1]) for i in idxs],
         "missing_evidence": data.get("missing_evidence"),

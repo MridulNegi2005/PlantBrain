@@ -4,7 +4,6 @@ import { DataUnavailable } from "@/components/data-unavailable"
 import { PageHeader } from "@/components/page-header"
 import { StatusBadge } from "@/components/status-badge"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
   TableBody,
@@ -30,12 +29,15 @@ export default async function DocumentsPage() {
         status={result ? `${result.total} RECORDS` : "UNAVAILABLE"}
       />
       {!result ? <DataUnavailable label="Document register" /> : null}
-      <Card>
-        <CardHeader>
-          <CardTitle>Document register</CardTitle>
-          <CardDescription>Live response from GET /api/documents.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <section className="border border-border bg-card" aria-labelledby="document-register-title">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
+          <div>
+            <p className="technical-label">Source registry</p>
+            <h2 id="document-register-title" className="mt-1 text-lg font-semibold tracking-[-0.02em]">Document register</h2>
+          </div>
+          <p className="font-mono text-[0.62rem] text-muted-foreground uppercase">GET /api/documents</p>
+        </div>
+        <div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -51,7 +53,12 @@ export default async function DocumentsPage() {
                 <TableRow key={document.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{document.filename}</p>
+                      <Link
+                        href={`/documents/${encodeURIComponent(document.id)}`}
+                        className="font-medium underline-offset-4 hover:text-primary hover:underline"
+                      >
+                        {document.filename}
+                      </Link>
                       <p className="font-mono text-[0.68rem] text-muted-foreground">{document.id}</p>
                     </div>
                   </TableCell>
@@ -72,8 +79,8 @@ export default async function DocumentsPage() {
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   )
 }

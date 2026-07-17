@@ -10,7 +10,10 @@ export type Health = {
 }
 
 export type DocumentStatus =
+  | "registered"
   | "uploaded"
+  | "queued"
+  | "processing"
   | "extracting"
   | "chunking"
   | "embedding"
@@ -25,6 +28,28 @@ export type DocumentSummary = {
   status: DocumentStatus
   asset_tags?: string[]
   created_at: string
+}
+
+export type DocumentDetail = DocumentSummary & {
+  page_count: number | null
+  chunks_count: number
+}
+
+export type DocumentChunk = {
+  chunk_id: string
+  page: number | null
+  text: string
+  bbox: {
+    x0: number
+    y0: number
+    x1: number
+    y1: number
+  } | null
+  asset_tags: string[]
+}
+
+export type DocumentChunksResponse = ListResponse<DocumentChunk> & {
+  stub: boolean
 }
 
 export type UploadedDocument = {
@@ -56,7 +81,7 @@ export type AssetSummary = {
 
 export type AssetDetail = AssetSummary & {
   plant_id: string
-  summary: string
+  summary: string | null
 }
 
 export type AssetTimelineItem = {
@@ -77,7 +102,7 @@ export type GraphEdge = {
   source: string
   target: string
   type: string
-  confidence: number
+  confidence: number | null
 }
 
 export type KnowledgeGraph = {
@@ -86,8 +111,9 @@ export type KnowledgeGraph = {
 }
 
 export type Citation = {
+  document_id?: string
   document: string
-  page: number
+  page: number | null
   chunk_id?: string
   quote?: string
 }
@@ -100,12 +126,14 @@ export type CopilotAnswer = {
   graph_path?: string[]
   missing_evidence?: string[]
   recommended_next_actions?: string[]
+  note?: string
 }
 
 export type RcaCause = {
   cause: string
   confidence: number
   evidence: string[]
+  citations?: Citation[]
 }
 
 export type RcaReport = {
@@ -114,15 +142,36 @@ export type RcaReport = {
   likely_causes: RcaCause[]
   missing_checks: string[]
   recommended_actions: string[]
+  citations?: Citation[]
+  graph_path?: string[]
+  reason?: string
+  note?: string
+}
+
+export type SimilarIncident = {
+  incident_id: string
+  similarity: number
+  summary: string
+  citations: Array<{
+    document: string
+    page: number | null
+  }>
+}
+
+export type SimilarLessonsResponse = {
+  items: SimilarIncident[]
 }
 
 export type ComplianceReport = {
   asset: string
-  requirement: string
-  status: "pass" | "gap"
+  requirement: string | null
+  status: "ok" | "pass" | "gap" | "unknown"
   evidence_found: string[]
+  citations?: Citation[]
   missing_evidence: string | null
   risk_level: string
+  reason?: string
+  note?: string
 }
 
 export type EvaluationCase = {
@@ -148,24 +197,33 @@ export type EvaluationMetrics = {
 export type EvaluationRun = {
   id: string
   status: string
-  completed_at?: string
-  metrics?: EvaluationMetrics
+  completed_at?: string | null
+  metrics?: Partial<EvaluationMetrics>
+  error?: string | null
+}
+
+export type LatestEvaluationRun = {
+  id: string | null
+  status: string
+  completed_at?: string | null
+  metrics: Partial<EvaluationMetrics>
+  error?: string | null
 }
 
 export type AuditLog = {
   id: string
-  actor: string
+  actor: string | null
   action: string
-  resource_type: string
-  resource_id: string
+  resource_type: string | null
+  resource_id: string | null
   created_at: string
 }
 
 export type SecurityEvent = {
   id: string
   event_type: string
-  resource_id: string
-  detail: string
+  resource_id: string | null
+  detail: string | null
   created_at: string
 }
 
@@ -173,5 +231,11 @@ export type ApiErrorShape = {
   error?: {
     code?: string
     message?: string
+  }
+  detail?: {
+    error?: {
+      code?: string
+      message?: string
+    }
   }
 }

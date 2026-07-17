@@ -20,7 +20,33 @@ def test_extractive_answer_has_citations(monkeypatch):
     result = copilot.answer(None, "why did P-204A fail?", asset_tag="P-204A")
     assert result["answer"]
     assert result["citations"] and result["citations"][0]["document"] == "WO-129.pdf"
+    assert result["citations"][0]["document_id"] == "d1"
     assert result["citations"][0]["chunk_id"] == "c1"
+
+
+def test_llm_answer_refuses_without_valid_citation_indexes(monkeypatch):
+    monkeypatch.setattr(copilot.llm, "chat_json", lambda *a, **k: {
+        "answer": "Fabricated answer",
+        "confidence": 0.99,
+        "citations": [999],
+        "missing_evidence": [],
+        "recommended_next_actions": [],
+    })
+    result = copilot._llm_answer("why?", EVIDENCE, [])
+    assert result["answer"] is None
+    assert result["reason"] == "no_supporting_evidence"
+    assert result["citations"] == []
+
+
+def test_copilot_quarantines_injected_evidence(monkeypatch):
+    import app.security.injection as injection
+
+    monkeypatch.setattr(copilot, "retrieve",
+                        lambda db, q, asset_tag=None: {"evidence": EVIDENCE, "graph_path": []})
+    monkeypatch.setattr(injection, "check_evidence", lambda db, evidence: True)
+    result = copilot.answer(None, "why?", asset_tag="P-204A")
+    assert result["answer"] is None
+    assert result["reason"] == "unsafe_evidence"
 
 
 def test_no_evidence_refuses(monkeypatch):

@@ -16,23 +16,20 @@ import {
   UploadCloudIcon,
 } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
 const navigation = [
-  { href: "/dashboard", label: "Plant overview", icon: LayoutDashboardIcon },
-  { href: "/upload", label: "Ingestion", icon: UploadCloudIcon },
-  { href: "/documents", label: "Documents", icon: FileStackIcon },
-  { href: "/assets", label: "Assets", icon: BoxesIcon },
-  { href: "/copilot", label: "Cited copilot", icon: BotIcon },
-  { href: "/graph", label: "Knowledge graph", icon: GitBranchIcon },
-  { href: "/rca", label: "Root cause", icon: SearchCheckIcon },
-  { href: "/compliance", label: "Compliance", icon: ClipboardCheckIcon },
-  { href: "/evaluation", label: "Evaluation", icon: ActivityIcon },
-  { href: "/admin/audit", label: "Audit log", icon: ShieldCheckIcon },
-]
+  { code: "OV", href: "/dashboard", label: "Plant overview", icon: LayoutDashboardIcon },
+  { code: "IN", href: "/upload", label: "Ingestion", icon: UploadCloudIcon },
+  { code: "DC", href: "/documents", label: "Documents", icon: FileStackIcon },
+  { code: "AS", href: "/assets", label: "Assets", icon: BoxesIcon },
+  { code: "CP", href: "/copilot", label: "Cited copilot", icon: BotIcon },
+  { code: "KG", href: "/graph", label: "Knowledge graph", icon: GitBranchIcon },
+  { code: "RC", href: "/rca", label: "Root cause", icon: SearchCheckIcon },
+  { code: "CO", href: "/compliance", label: "Compliance", icon: ClipboardCheckIcon },
+  { code: "EV", href: "/evaluation", label: "Evaluation", icon: ActivityIcon },
+  { code: "AU", href: "/admin/audit", label: "Audit trail", icon: ShieldCheckIcon },
+] as const
 
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`))
@@ -40,21 +37,48 @@ function isActive(pathname: string, href: string) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const current = navigation.find((item) => isActive(pathname, item.href)) ?? navigation[0]
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
-      <aside className="hidden border-r border-sidebar-border bg-sidebar/95 lg:flex lg:h-screen lg:flex-col lg:sticky lg:top-0">
-        <div className="flex items-center gap-3 px-5 py-5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <BrainCircuitIcon className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-heading text-sm font-semibold tracking-tight">PlantBrain AI</p>
-            <p className="truncate font-mono text-[0.65rem] text-muted-foreground">SHAKTI / UNIT-2</p>
+    <div className="min-h-screen lg:grid lg:grid-cols-[17.5rem_minmax(0,1fr)]">
+      <a
+        href="#main-content"
+        className="fixed left-3 top-3 z-50 -translate-y-20 border border-ring bg-background px-3 py-2 font-mono text-xs text-foreground focus:translate-y-0"
+      >
+        Skip to workspace
+      </a>
+
+      <aside className="hidden border-r border-sidebar-border bg-sidebar lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+        <div className="border-b border-sidebar-border px-5 py-5">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex size-9 items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground">
+              <BrainCircuitIcon className="size-5" strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0">
+              <p className="font-mono text-[0.62rem] font-semibold tracking-[0.18em] text-sidebar-primary uppercase">
+                PB // OPS INTELLIGENCE
+              </p>
+              <p className="mt-1 font-heading text-base font-semibold tracking-[-0.02em] text-sidebar-foreground">
+                PlantBrain
+              </p>
+            </div>
           </div>
         </div>
-        <Separator />
-        <nav aria-label="Primary navigation" className="flex flex-1 flex-col gap-1 p-3">
+
+        <div className="border-b border-sidebar-border px-5 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-mono text-[0.65rem] tracking-[0.14em] text-muted-foreground uppercase">
+              Active plant
+            </span>
+            <span className="flex items-center gap-1.5 font-mono text-[0.62rem] text-accent uppercase">
+              <span className="size-1.5 bg-accent" aria-hidden="true" />
+              Linked
+            </span>
+          </div>
+          <p className="mt-2 font-mono text-xs font-medium text-sidebar-foreground">SHAKTI / UNIT-2</p>
+        </div>
+
+        <nav aria-label="Primary navigation" className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
           {navigation.map((item) => {
             const active = isActive(pathname, item.href)
             const Icon = item.icon
@@ -64,59 +88,89 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  buttonVariants({ variant: active ? "secondary" : "ghost", size: "sm" }),
-                  "w-full justify-start gap-2.5",
-                  active && "text-foreground"
+                  "group relative grid min-h-10 grid-cols-[2rem_1.25rem_1fr] items-center gap-2 border-l-2 px-3 py-2 text-sm transition-colors duration-150 focus-visible:outline-ring",
+                  active
+                    ? "border-l-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "border-l-transparent text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 )}
               >
-                <Icon className="size-4" />
-                {item.label}
+                <span className={cn("font-mono text-[0.6rem]", active ? "text-sidebar-primary" : "text-muted-foreground")}>
+                  {item.code}
+                </span>
+                <Icon className="size-4" strokeWidth={1.6} />
+                <span className="truncate">{item.label}</span>
               </Link>
             )
           })}
         </nav>
-        <div className="p-4">
-          <div className="rounded-lg border bg-background/40 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs text-muted-foreground">Evidence policy</span>
-              <Badge variant="outline">Enforced</Badge>
+
+        <div className="border-t border-sidebar-border p-4">
+          <div className="border border-sidebar-border bg-sidebar-accent p-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheckIcon className="size-4 text-sidebar-primary" strokeWidth={1.75} />
+              <span className="font-mono text-[0.65rem] font-semibold tracking-[0.12em] text-sidebar-foreground uppercase">
+                Evidence lock
+              </span>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              No citation means no operational answer.
+              Operational answers require source evidence.
             </p>
           </div>
         </div>
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-50 border-b bg-background px-4 py-3 lg:hidden">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <BrainCircuitIcon className="size-5 text-primary" />
-              <span className="font-heading text-sm font-semibold">PlantBrain AI</span>
+        <header className="sticky top-0 z-40 border-b border-border bg-background lg:hidden">
+          <div className="flex h-14 items-center justify-between gap-3 px-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-7 items-center justify-center bg-primary text-primary-foreground">
+                <BrainCircuitIcon className="size-4" strokeWidth={1.75} />
+              </div>
+              <div>
+                <p className="font-heading text-sm font-semibold">PlantBrain</p>
+                <p className="font-mono text-[0.58rem] tracking-[0.12em] text-muted-foreground uppercase">SHAKTI / UNIT-2</p>
+              </div>
             </div>
-            <Badge variant="outline" className="font-mono">UNIT-2</Badge>
+            <span className="font-mono text-[0.62rem] text-accent">{current.code} / ACTIVE</span>
           </div>
-          <nav aria-label="Primary navigation" className="mt-3 flex gap-1 overflow-x-auto pb-1">
+          <nav
+            aria-label="Primary navigation"
+            className="flex gap-px overflow-x-auto border-t border-border px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             {navigation.map((item) => {
               const active = isActive(pathname, item.href)
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    buttonVariants({ variant: active ? "secondary" : "ghost", size: "xs" }),
-                    "shrink-0"
+                    "flex min-h-11 shrink-0 items-center gap-2 border px-3 font-mono text-[0.65rem] uppercase transition-colors",
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {item.label}
+                  <span>{item.code}</span>
+                  <span className="font-sans text-xs normal-case">{item.label}</span>
                 </Link>
               )
             })}
           </nav>
         </header>
 
-        <main className="mx-auto min-h-screen w-full max-w-[96rem] p-4 sm:p-6 lg:p-8">
+        <div className="hidden h-12 items-center justify-between border-b border-border px-6 lg:flex">
+          <div className="flex items-center gap-3">
+            <span className="bg-primary px-2 py-1 font-mono text-[0.62rem] font-semibold text-primary-foreground">{current.code}</span>
+            <span className="font-mono text-[0.65rem] tracking-[0.12em] text-muted-foreground uppercase">{current.label}</span>
+          </div>
+          <div className="flex items-center gap-5 font-mono text-[0.62rem] tracking-[0.1em] text-muted-foreground uppercase">
+            <span>Plant / Shakti Unit-2</span>
+            <span className="flex items-center gap-2 text-accent"><span className="size-1.5 bg-accent" /> Evidence policy active</span>
+          </div>
+        </div>
+
+        <main id="main-content" className="mx-auto min-h-[calc(100vh-3rem)] w-full max-w-[100rem] p-4 sm:p-6 lg:p-8 xl:p-10">
           {children}
         </main>
       </div>
