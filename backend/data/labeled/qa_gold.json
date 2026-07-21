@@ -1,0 +1,73 @@
+[
+  {
+    "id": "q1",
+    "question": "Why did P-204A fail twice recently?",
+    "category": "rca",
+    "expected_docs": [
+      "WO-129",
+      "WO-141",
+      "IR-17",
+      "INC-08",
+      "OEM-PUMP-02"
+    ],
+    "expected_points": [
+      "abnormal vibration",
+      "seal wear",
+      "coupling misalignment",
+      "missing post-repair vibration reading"
+    ]
+  },
+  {
+    "id": "q2",
+    "question": "What compliance gaps exist for V-301?",
+    "category": "compliance",
+    "expected_docs": [
+      "CMP-01",
+      "IR-33"
+    ],
+    "expected_points": [
+      "missing latest pressure test certificate",
+      "overdue hydrostatic test"
+    ]
+  },
+  {
+    "id": "q3",
+    "question": "What should a technician check before closing a pump seal replacement?",
+    "category": "multi_hop",
+    "expected_docs": [
+      "SOP-17",
+      "OEM-PUMP-02",
+      "INC-08"
+    ],
+    "expected_points": [
+      "laser coupling alignment",
+      "post-repair vibration reading"
+    ]
+  },
+  {
+    "id": "q4",
+    "question": "Why is HX-102 outlet temperature rising?",
+    "category": "rca",
+    "expected_docs": [
+      "WO-133",
+      "IR-19",
+      "OEM-HX-01"
+    ],
+    "expected_points": [
+      "tube-side fouling",
+      "cleaning interval"
+    ]
+  },
+  {
+    "id": "q5",
+    "question": "Find similar past failures to a pump seal leak.",
+    "category": "lessons",
+    "expected_docs": [
+      "INC-08"
+    ],
+    "expected_points": [
+      "coupling misalignment",
+      "post-repair verification"
+    ]
+  }
+]

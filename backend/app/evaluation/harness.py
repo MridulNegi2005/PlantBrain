@@ -20,7 +20,7 @@ from app.db.base import gen_id
 from app.llm import client as llm
 from app.rag.copilot import answer as copilot_answer
 
-LABELED = Path(__file__).resolve().parents[2].parent / "data" / "labeled"
+LABELED = Path(__file__).resolve().parents[2] / "data" / "labeled"
 
 
 def _load(name: str) -> list:
