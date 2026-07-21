@@ -19,16 +19,16 @@ import {
 import { cn } from "@/lib/utils"
 
 const navigation = [
-  { code: "OV", href: "/dashboard", label: "Plant overview", icon: LayoutDashboardIcon },
-  { code: "IN", href: "/upload", label: "Ingestion", icon: UploadCloudIcon },
+  { code: "OV", href: "/dashboard", label: "Overview", icon: LayoutDashboardIcon },
+  { code: "UP", href: "/upload", label: "Add documents", icon: UploadCloudIcon },
   { code: "DC", href: "/documents", label: "Documents", icon: FileStackIcon },
-  { code: "AS", href: "/assets", label: "Assets", icon: BoxesIcon },
-  { code: "CP", href: "/copilot", label: "Cited copilot", icon: BotIcon },
-  { code: "KG", href: "/graph", label: "Knowledge graph", icon: GitBranchIcon },
-  { code: "RC", href: "/rca", label: "Root cause", icon: SearchCheckIcon },
+  { code: "EQ", href: "/assets", label: "Equipment", icon: BoxesIcon },
+  { code: "AI", href: "/copilot", label: "Ask a question", icon: BotIcon },
+  { code: "MP", href: "/graph", label: "Connections", icon: GitBranchIcon },
+  { code: "DX", href: "/rca", label: "Diagnose issue", icon: SearchCheckIcon },
   { code: "CO", href: "/compliance", label: "Compliance", icon: ClipboardCheckIcon },
-  { code: "EV", href: "/evaluation", label: "Evaluation", icon: ActivityIcon },
-  { code: "AU", href: "/admin/audit", label: "Audit trail", icon: ShieldCheckIcon },
+  { code: "AC", href: "/evaluation", label: "Accuracy", icon: ActivityIcon },
+  { code: "LG", href: "/admin/audit", label: "Activity log", icon: ShieldCheckIcon },
 ] as const
 
 function isActive(pathname: string, href: string) {
@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="min-w-0">
               <p className="font-mono text-[0.62rem] font-semibold tracking-[0.18em] text-sidebar-primary uppercase">
-                PB // OPS INTELLIGENCE
+                AI PLANT ASSISTANT
               </p>
               <p className="mt-1 font-heading text-base font-semibold tracking-[-0.02em] text-sidebar-foreground">
                 PlantBrain
@@ -72,7 +72,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             <span className="flex items-center gap-1.5 font-mono text-[0.62rem] text-accent uppercase">
               <span className="size-1.5 bg-accent" aria-hidden="true" />
-              Linked
+              Connected
             </span>
           </div>
           <p className="mt-2 font-mono text-xs font-medium text-sidebar-foreground">SHAKTI / UNIT-2</p>
@@ -109,11 +109,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <ShieldCheckIcon className="size-4 text-sidebar-primary" strokeWidth={1.75} />
               <span className="font-mono text-[0.65rem] font-semibold tracking-[0.12em] text-sidebar-foreground uppercase">
-                Evidence lock
+                Answers you can trust
               </span>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              Operational answers require source evidence.
+              Every answer points to a real document. No source, no answer.
             </p>
           </div>
         </div>
@@ -166,7 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-5 font-mono text-[0.62rem] tracking-[0.1em] text-muted-foreground uppercase">
             <span>Plant / Shakti Unit-2</span>
-            <span className="flex items-center gap-2 text-accent"><span className="size-1.5 bg-accent" /> Evidence policy active</span>
+            <span className="flex items-center gap-2 text-accent"><span className="size-1.5 bg-accent" /> Every answer cites a source</span>
           </div>
         </div>
 

@@ -5,7 +5,7 @@ import type { Citation } from "@/lib/api/types"
 
 export function CitationList({
   citations,
-  emptyLabel = "No exact citations were returned.",
+  emptyLabel = "No sources listed.",
 }: {
   citations: Citation[]
   emptyLabel?: string
@@ -33,13 +33,13 @@ export function CitationList({
             </blockquote>
           ) : null}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 font-mono text-[0.68rem] text-muted-foreground">
-            <span>{citation.chunk_id ?? "Chunk ID unavailable"}</span>
+            <span>{citation.chunk_id ?? "Reference unavailable"}</span>
             {citation.document_id ? (
               <Link
                 href={`/documents/${encodeURIComponent(citation.document_id)}`}
                 className="text-primary underline-offset-4 hover:underline"
               >
-                Open evidence record
+                Open document
               </Link>
             ) : null}
           </div>

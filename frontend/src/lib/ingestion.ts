@@ -9,16 +9,28 @@ export const INGESTION_STATES = [
   "completed",
 ] as const satisfies readonly DocumentStatus[]
 
+export const INGESTION_LABELS: Record<
+  (typeof INGESTION_STATES)[number],
+  string
+> = {
+  uploaded: "Received",
+  extracting: "Reading the document",
+  chunking: "Breaking it into sections",
+  embedding: "Making it searchable",
+  graph_building: "Connecting to your equipment",
+  completed: "Ready",
+}
+
 export const INGESTION_DESCRIPTIONS: Record<
   (typeof INGESTION_STATES)[number],
   string
 > = {
-  uploaded: "File accepted and fingerprinted",
-  extracting: "Text, tables, and OCR content extracted",
-  chunking: "Evidence split with page provenance",
-  embedding: "Retrieval vectors generated",
-  graph_building: "Assets and relationships connected",
-  completed: "Document available to search and agents",
+  uploaded: "File received and checked",
+  extracting: "Pulling out the text, tables, and scanned pages",
+  chunking: "Splitting it into passages, keeping page numbers",
+  embedding: "Indexing it so questions can find it",
+  graph_building: "Linking it to the equipment it mentions",
+  completed: "Done — you can search and ask about it now",
 }
 
 export const INGESTION_POLL_ATTEMPTS = 8

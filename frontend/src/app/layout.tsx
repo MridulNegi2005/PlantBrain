@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     default: "PlantBrain AI",
     template: "%s | PlantBrain AI",
   },
-  description: "The evidence-backed memory layer for industrial operations.",
+  description: "Ask anything about your plant and get answers backed by real documents.",
 };
 
 export default function RootLayout({

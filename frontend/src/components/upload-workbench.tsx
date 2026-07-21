@@ -90,7 +90,7 @@ export function UploadWorkbench() {
           break
         }
         if (current.status === "failed") {
-          throw new Error(current.error ?? "The ingestion job failed.")
+          throw new Error(current.error ?? "Processing failed. Please try again.")
         }
         if (attempt < INGESTION_POLL_ATTEMPTS - 1) {
           await new Promise((resolve) =>
@@ -101,7 +101,7 @@ export function UploadWorkbench() {
 
       if (!reachedTerminalState) {
         setNotice(
-          "The job is still running. Automatic polling paused to avoid an endless request loop; its latest state remains visible."
+          "This is taking longer than usual. It's still processing in the background — use Check latest to see the newest status."
         )
       }
     } catch (caught) {
@@ -123,10 +123,10 @@ export function UploadWorkbench() {
         throw new Error(current.error ?? "The ingestion job failed.")
       }
       if (current.status !== "completed") {
-        setNotice("The job is still active. Its latest backend state is shown in the pipeline.")
+        setNotice("Still processing. The latest step is shown above.")
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The ingestion state could not be refreshed.")
+      setError(caught instanceof Error ? caught.message : "Couldn't refresh the status. Please try again.")
     } finally {
       setBusy(false)
     }
@@ -138,13 +138,13 @@ export function UploadWorkbench() {
     <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
       <Card>
         <CardHeader>
-          <CardTitle>Upload plant evidence</CardTitle>
-          <CardDescription>Files are validated locally, then sent directly to the FastAPI upload endpoint.</CardDescription>
+          <CardTitle>Upload a document</CardTitle>
+          <CardDescription>We check the file on your device first, then send it securely to PlantBrain.</CardDescription>
         </CardHeader>
         <CardContent>
           <FieldGroup>
             <Field data-invalid={Boolean(error)}>
-              <FieldLabel htmlFor="evidence-file">Evidence file</FieldLabel>
+              <FieldLabel htmlFor="evidence-file">Document</FieldLabel>
               <button
                 type="button"
                 className={cn(
@@ -179,14 +179,14 @@ export function UploadWorkbench() {
                 aria-invalid={Boolean(error)}
                 onChange={(event) => chooseFile(event.target.files?.[0])}
               />
-              <FieldDescription>Uploaded document text is treated as untrusted data, never as AI instructions.</FieldDescription>
+              <FieldDescription>For safety, text inside documents is treated as information only — never as commands the AI will follow.</FieldDescription>
               <FieldError>{error}</FieldError>
             </Field>
           </FieldGroup>
         </CardContent>
         <CardFooter className="justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheckIcon className="size-4" /> Server-side type, size, and hash checks still apply.
+            <ShieldCheckIcon className="size-4" /> Every file is scanned and verified on our servers too.
           </div>
           <div className="flex flex-wrap gap-2">
             {jobId && job?.status !== "completed" && job?.status !== "failed" ? (
@@ -197,7 +197,7 @@ export function UploadWorkbench() {
             ) : null}
             <Button onClick={runUpload} disabled={!file || busy}>
               {busy ? <Spinner data-icon="inline-start" /> : <FileUpIcon data-icon="inline-start" />}
-              {busy ? "Processing" : "Upload and ingest"}
+              {busy ? "Processing" : "Upload & process"}
             </Button>
           </div>
         </CardFooter>
@@ -205,8 +205,8 @@ export function UploadWorkbench() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Ingestion status</CardTitle>
-          <CardDescription>One job across extraction, chunking, embeddings, and graph construction.</CardDescription>
+          <CardTitle>Progress</CardTitle>
+          <CardDescription>Watch PlantBrain read the document, break it into searchable pieces, and connect it to your equipment.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <IngestionTimeline
@@ -224,7 +224,7 @@ export function UploadWorkbench() {
               </AlertDescription>
             </Alert>
           ) : (
-            <p className="text-sm text-muted-foreground">Choose a file to begin. Pipeline events will appear here from the ingestion job endpoint.</p>
+            <p className="text-sm text-muted-foreground">Choose a file to begin. Each step will appear here as it happens.</p>
           )}
           {notice ? (
             <Alert>

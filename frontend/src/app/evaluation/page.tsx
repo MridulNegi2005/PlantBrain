@@ -3,7 +3,7 @@ import { EvaluationWorkbench } from "@/components/evaluation-workbench"
 import { PageHeader } from "@/components/page-header"
 import { getEvaluationCases, getLatestEvaluationRun } from "@/lib/api/client"
 
-export const metadata = { title: "Evaluation" }
+export const metadata = { title: "Accuracy" }
 
 export default async function EvaluationPage() {
   const [casesResult, latestResult] = await Promise.allSettled([
@@ -16,9 +16,9 @@ export default async function EvaluationPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="System evaluation"
-        title="Show what the AI gets right—and where it does not."
-        description="Run the labeled benchmark and inspect retrieval, citation, compliance, RAGAS, and response-time metrics returned by the evaluation service."
+        eyebrow="Accuracy"
+        title="How accurate is PlantBrain?"
+        description="We test PlantBrain against a set of questions with known correct answers, then measure how often it finds the right documents, cites them correctly, and how fast it responds."
         status="MEASURED RESULTS ONLY"
       />
       {!result ? <DataUnavailable label="Evaluation cases" /> : null}

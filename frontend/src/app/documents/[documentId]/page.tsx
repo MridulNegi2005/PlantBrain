@@ -26,7 +26,7 @@ import { ApiError, getDocument, getDocumentChunks } from "@/lib/api/client"
 import { formatDate, titleCase } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-export const metadata = { title: "Evidence record" }
+export const metadata = { title: "Document" }
 
 export default async function DocumentDetailPage({
   params,
@@ -75,16 +75,16 @@ export default async function DocumentDetailPage({
       </Link>
 
       <PageHeader
-        eyebrow="Evidence record"
+        eyebrow="Document"
         title={result.filename}
-        description="Inspect the source record, linked assets, indexing coverage, and ingestion state behind operational answers."
+        description="See what's in this document, which equipment it mentions, and whether it's ready to search."
         status={result.status.toUpperCase()}
       />
 
       <section className="grid divide-y divide-border border border-border bg-card sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4" aria-label="Document metrics">
         <div className="p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="technical-label">Document type</p>
+            <p className="technical-label">Type</p>
             <FileTextIcon className="size-4 text-muted-foreground" />
           </div>
           <p className="mt-5 text-lg font-semibold">{titleCase(result.doc_type)}</p>
@@ -94,32 +94,32 @@ export default async function DocumentDetailPage({
           <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{result.page_count ?? "—"}</p>
         </div>
         <div className="p-4 sm:p-5">
-          <p className="technical-label">Evidence chunks</p>
+          <p className="technical-label">Searchable passages</p>
           <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{result.chunks_count}</p>
         </div>
         <div className="p-4 sm:p-5">
-          <p className="technical-label">Index status</p>
+          <p className="technical-label">Status</p>
           <div className="mt-5"><StatusBadge status={result.status} /></div>
         </div>
       </section>
 
-      {chunks ? <DocumentChunksPanel chunks={chunks} /> : <DataUnavailable label="Document evidence chunks" />}
+      {chunks ? <DocumentChunksPanel chunks={chunks} /> : <DataUnavailable label="This document's passages" />}
 
       <section className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>Provenance identity</CardTitle>
-              <CardDescription>Stable identifiers returned by the document registry.</CardDescription>
+              <CardTitle>Document details</CardTitle>
+              <CardDescription>The reference ID and when it was added.</CardDescription>
               <CardAction><FingerprintIcon className="size-4 text-muted-foreground" /></CardAction>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div>
-                <p className="text-xs text-muted-foreground">Document ID</p>
+                <p className="text-xs text-muted-foreground">Reference ID</p>
                 <p className="mt-1 break-all font-mono text-sm">{result.id}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Indexed at</p>
+                <p className="text-xs text-muted-foreground">Added on</p>
                 <time className="mt-1 block font-mono text-sm" dateTime={result.created_at}>
                   {formatDate(result.created_at)}
                 </time>
@@ -129,8 +129,8 @@ export default async function DocumentDetailPage({
 
           <Card>
             <CardHeader>
-              <CardTitle>Linked assets</CardTitle>
-              <CardDescription>Asset profiles connected during entity extraction.</CardDescription>
+              <CardTitle>Equipment mentioned</CardTitle>
+              <CardDescription>Equipment PlantBrain found referenced in this document.</CardDescription>
               <CardAction><BoxesIcon className="size-4 text-muted-foreground" /></CardAction>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
@@ -145,7 +145,7 @@ export default async function DocumentDetailPage({
               ))}
               {!result.asset_tags?.length ? (
                 <p className="text-sm text-muted-foreground">
-                  No asset tags were linked to this record.
+                  No equipment was mentioned in this document.
                 </p>
               ) : null}
             </CardContent>

@@ -7,8 +7,7 @@ import {
 import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
 import type { DocumentStatus } from "@/lib/api/types"
-import { INGESTION_DESCRIPTIONS, INGESTION_STATES } from "@/lib/ingestion"
-import { titleCase } from "@/lib/format"
+import { INGESTION_DESCRIPTIONS, INGESTION_LABELS, INGESTION_STATES } from "@/lib/ingestion"
 import { cn } from "@/lib/utils"
 
 type IngestionTimelineProps = {
@@ -32,13 +31,13 @@ export function IngestionTimeline({ currentIndex, status }: IngestionTimelinePro
   return (
     <div className="flex flex-col gap-6">
       <Progress value={progress}>
-        <ProgressLabel>Knowledge pipeline</ProgressLabel>
+        <ProgressLabel>Processing</ProgressLabel>
         <ProgressValue />
       </Progress>
 
       {status === "failed" && !hasReliableFailureStage ? (
         <p className="text-sm text-destructive">
-          Ingestion failed, but the backend did not identify the failing stage.
+          Something went wrong while processing this document. Please try uploading it again.
         </p>
       ) : null}
 
@@ -61,7 +60,7 @@ export function IngestionTimeline({ currentIndex, status }: IngestionTimelinePro
                       index > boundedIndex && "text-muted-foreground"
                     )}
                   >
-                    {titleCase(state)}
+                    {INGESTION_LABELS[state]}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {INGESTION_DESCRIPTIONS[state]}

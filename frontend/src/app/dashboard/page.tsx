@@ -30,19 +30,19 @@ export default async function DashboardPage() {
   )
 
   const metrics = [
-    { code: "DOC", label: "Evidence documents", value: documents?.total, detail: "indexed corpus" },
-    { code: "AST", label: "Tracked assets", value: assets?.total, detail: "plant index" },
-    { code: "RSK", label: "Open risks", value: openRisks, detail: "requires review" },
-    { code: "GAP", label: "Compliance gaps", value: complianceGaps, detail: "missing evidence" },
+    { code: "DOC", label: "Documents", value: documents?.total, detail: "uploaded & searchable" },
+    { code: "EQP", label: "Equipment tracked", value: assets?.total, detail: "across the plant" },
+    { code: "RSK", label: "Open risks", value: openRisks, detail: "need attention" },
+    { code: "GAP", label: "Compliance gaps", value: complianceGaps, detail: "missing records" },
   ]
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        eyebrow="Plant control dossier"
-        title="Operational knowledge. Source attached."
-        description="A live index of Shakti Petrochem Unit-2—assets, evidence, risk signals, and the provenance behind every operational conclusion."
-        status={health?.db_connected ? "Systems linked" : "Backend unavailable"}
+        eyebrow="Plant overview"
+        title="Everything about your plant, in one place."
+        description="A live view of Shakti Petrochem Unit-2 — your equipment, documents, open risks, and the proof behind every answer."
+        status={health?.db_connected ? "Connected" : "Not connected"}
       />
 
       {!health || !documents || !assets ? <DataUnavailable label="Plant overview data" /> : null}
@@ -52,11 +52,11 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-3">
             <span className="size-2 bg-primary" aria-hidden="true" />
             <h2 id="plant-index-title" className="font-mono text-[0.68rem] font-semibold tracking-[0.12em] uppercase">
-              Plant index / live aggregation
+              Plant summary
             </h2>
           </div>
           <span className="font-mono text-[0.62rem] tracking-[0.08em] text-muted-foreground uppercase">
-            Source: operational registry
+            Live data
           </span>
         </div>
         <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x xl:grid-cols-4 xl:divide-y-0">
@@ -79,11 +79,11 @@ export default async function DashboardPage() {
         <div className="border border-border bg-card">
           <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 sm:px-5">
             <div>
-              <p className="technical-label">Decision queue</p>
-              <h2 className="mt-1 text-lg font-semibold tracking-[-0.02em]">Assets requiring attention</h2>
+              <p className="technical-label">Needs attention</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-[-0.02em]">Equipment to review</h2>
             </div>
             <Link href="/assets" className="flex min-h-10 items-center gap-2 px-2 font-mono text-[0.65rem] font-semibold text-primary uppercase hover:text-foreground">
-              Full index <ArrowUpRightIcon className="size-3.5" />
+              View all <ArrowUpRightIcon className="size-3.5" />
             </Link>
           </div>
 
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
                 <span className="font-mono text-sm font-semibold text-primary">{asset.asset_tag}</span>
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{asset.asset_type}</p>
-                  <p className="mt-1 font-mono text-[0.62rem] text-muted-foreground">{asset.document_count} linked records</p>
+                  <p className="mt-1 font-mono text-[0.62rem] text-muted-foreground">{asset.document_count} linked documents</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                   {asset.open_risks > 0 ? <Badge variant="secondary">{asset.open_risks} risk</Badge> : null}
@@ -114,14 +114,14 @@ export default async function DashboardPage() {
         <div className="grid content-start gap-5">
           <section className="border border-border bg-card">
             <div className="border-b border-border px-4 py-3">
-              <p className="technical-label">Knowledge layer</p>
-              <h2 className="mt-1 text-base font-semibold">Service posture</h2>
+              <p className="technical-label">System status</p>
+              <h2 className="mt-1 text-base font-semibold">Everything running?</h2>
             </div>
             <dl className="divide-y divide-border px-4">
               {[
-                ["API service", health?.status ?? "offline"],
-                ["Evidence database", health?.db_connected ? "connected" : "offline"],
-                ["pgvector extension", health?.pgvector_enabled ? "enabled" : "not enabled"],
+                ["App service", health?.status ?? "offline"],
+                ["Database", health?.db_connected ? "connected" : "offline"],
+                ["Smart search", health?.pgvector_enabled ? "ready" : "unavailable"],
               ].map(([label, status]) => (
                 <div key={label} className="flex min-h-12 items-center justify-between gap-3 py-2">
                   <dt className="text-sm text-muted-foreground">{label}</dt>
@@ -135,8 +135,8 @@ export default async function DashboardPage() {
             <div className="flex items-center gap-2 border-b border-border px-4 py-3">
               <ShieldAlertIcon className="size-4 text-destructive" />
               <div>
-                <p className="technical-label">Security watch</p>
-                <h2 className="mt-1 text-base font-semibold">Guarded evidence events</h2>
+                <p className="technical-label">Security</p>
+                <h2 className="mt-1 text-base font-semibold">Suspicious activity</h2>
               </div>
             </div>
             <div className="divide-y divide-border">
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
                 </article>
               ))}
               {security && security.items.length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground">No security events recorded.</p>
+                <p className="p-4 text-sm text-muted-foreground">No suspicious activity detected.</p>
               ) : null}
             </div>
           </section>
@@ -160,10 +160,10 @@ export default async function DashboardPage() {
       <section className="border border-border bg-card">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-4 py-3 sm:px-5">
           <div>
-            <p className="technical-label">Evidence register</p>
-            <h2 className="mt-1 text-lg font-semibold tracking-[-0.02em]">Recently indexed records</h2>
+            <p className="technical-label">Documents</p>
+            <h2 className="mt-1 text-lg font-semibold tracking-[-0.02em]">Recently added</h2>
           </div>
-          <Link href="/documents" className="font-mono text-[0.65rem] font-semibold text-primary uppercase hover:text-foreground">Open document register</Link>
+          <Link href="/documents" className="font-mono text-[0.65rem] font-semibold text-primary uppercase hover:text-foreground">View all documents</Link>
         </div>
         <div className="grid md:grid-cols-2 xl:grid-cols-3">
           {documents?.items.slice(0, 6).map((document) => (

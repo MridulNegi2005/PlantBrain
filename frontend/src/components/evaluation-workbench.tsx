@@ -23,15 +23,15 @@ import { normalizeEvaluationRun, type DisplayEvaluationRun } from "@/lib/evaluat
 import { percent, titleCase } from "@/lib/format"
 
 const metricDefinitions: Array<{ key: keyof EvaluationMetrics; label: string }> = [
-  { key: "asset_tag_precision", label: "Asset-tag precision" },
-  { key: "asset_tag_recall", label: "Asset-tag recall" },
-  { key: "retrieval_hit_rate_top5", label: "Top-5 retrieval hit rate" },
-  { key: "citation_correctness", label: "Citation correctness" },
-  { key: "compliance_gap_accuracy", label: "Compliance gap accuracy" },
-  { key: "ragas_faithfulness", label: "RAGAS faithfulness" },
-  { key: "ragas_answer_relevancy", label: "RAGAS answer relevancy" },
-  { key: "ragas_context_precision", label: "RAGAS context precision" },
-  { key: "ragas_context_recall", label: "RAGAS context recall" },
+  { key: "asset_tag_precision", label: "Right equipment tagged" },
+  { key: "asset_tag_recall", label: "No equipment missed" },
+  { key: "retrieval_hit_rate_top5", label: "Found the right document" },
+  { key: "citation_correctness", label: "Cited the correct source" },
+  { key: "compliance_gap_accuracy", label: "Compliance gaps spotted correctly" },
+  { key: "ragas_faithfulness", label: "Answers stay true to the source" },
+  { key: "ragas_answer_relevancy", label: "Answers stay on topic" },
+  { key: "ragas_context_precision", label: "Uses the right evidence" },
+  { key: "ragas_context_recall", label: "Finds all the evidence" },
 ]
 
 const EVALUATION_POLL_ATTEMPTS = 30
@@ -94,7 +94,7 @@ export function EvaluationWorkbench({
 
       if (!completed) {
         setNotice(
-          "The run is still active. Automatic polling paused to avoid an endless request loop; use Check latest results to refresh this run."
+          "This is taking longer than usual. The test is still running — use Check latest results to see the scores when it's done."
         )
       }
     } catch (caught) {
@@ -112,9 +112,9 @@ export function EvaluationWorkbench({
     try {
       const current = await refreshRun(run.id)
       if (current.status !== "completed") {
-        setNotice("The run is still active. Its latest backend state is shown below.")
+        setNotice("The test is still running. The latest status is shown below.")
       } else if (!current.metrics) {
-        setNotice("The backend marked this run completed but did not return metrics.")
+        setNotice("The test finished but didn't return any scores.")
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The evaluation status could not be refreshed.")
@@ -125,28 +125,28 @@ export function EvaluationWorkbench({
 
   const needsRefresh = Boolean(run && (!run.metrics || run.status !== "completed"))
   const statusTitle = !run
-    ? "No completed run loaded"
+    ? "No test run yet"
     : run.status === "completed" && !run.metrics
-      ? "Completed without metrics"
+      ? "Finished, but no scores came back"
       : run.status === "failed"
-        ? "Evaluation failed"
-        : `Evaluation ${run.status}`
+        ? "The test failed"
+        : `Test ${run.status}`
   const statusDescription = !run
-    ? "Start the benchmark to retrieve measured extraction, retrieval, citation, compliance, and RAGAS metrics."
+    ? "Run the test to see how accurately PlantBrain finds documents, cites sources, and spots compliance gaps."
     : run.status === "completed" && !run.metrics
-      ? `Run ${run.id} completed, but the response did not include a metrics payload.`
+      ? "The test finished but didn't return any scores."
       : run.status === "failed"
-        ? run.error || `Run ${run.id} failed before metrics were produced.`
+        ? run.error || "The test stopped before any scores were produced."
         : busy
-          ? `Run ${run.id} is being monitored. Metrics appear when the backend marks it completed.`
-          : `Run ${run.id} is not being polled automatically. Check its latest backend state when ready.`
+          ? "Running the test — scores will appear here as soon as it finishes."
+          : "This test isn't refreshing on its own. Use Check latest results when you're ready."
 
   return (
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>Benchmark control</CardTitle>
-          <CardDescription>{total} labeled cases available from the evaluation service.</CardDescription>
+          <CardTitle>Run the accuracy test</CardTitle>
+          <CardDescription>{total} test questions with known correct answers.</CardDescription>
           <CardAction>
             <div className="flex flex-wrap justify-end gap-2">
               {needsRefresh ? (
@@ -157,7 +157,7 @@ export function EvaluationWorkbench({
               ) : null}
               <Button onClick={runEvaluation} disabled={busy}>
                 {busy ? <Spinner data-icon="inline-start" /> : <PlayIcon data-icon="inline-start" />}
-                {busy ? "Running benchmark" : "Run evaluation"}
+                {busy ? "Testing…" : "Run the test"}
               </Button>
             </div>
           </CardAction>
@@ -168,13 +168,13 @@ export function EvaluationWorkbench({
           </div>
           {error ? (
             <Alert variant="destructive" className="mt-4">
-              <AlertTitle>Evaluation unavailable</AlertTitle>
+              <AlertTitle>Couldn't run the test</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
           {notice ? (
             <Alert className="mt-4">
-              <AlertTitle>Run status saved</AlertTitle>
+              <AlertTitle>Status saved</AlertTitle>
               <AlertDescription>{notice}</AlertDescription>
             </Alert>
           ) : null}
@@ -190,7 +190,7 @@ export function EvaluationWorkbench({
               return (
                 <div key={definition.key} className="bg-card p-4">
                   <div>
-                    <p className="technical-label">Measured score</p>
+                    <p className="technical-label">Score</p>
                     <h3 className="mt-1 text-sm font-semibold">{definition.label}</h3>
                   </div>
                   <div className="mt-6">
@@ -206,15 +206,15 @@ export function EvaluationWorkbench({
 
           <section className="grid gap-px border border-border bg-border md:grid-cols-3">
             <div className="bg-card p-5">
-              <div className="flex items-center justify-between"><p className="technical-label">PlantBrain response</p><TimerIcon className="size-4 text-primary" /></div>
+              <div className="flex items-center justify-between"><p className="technical-label">PlantBrain answers in</p><TimerIcon className="size-4 text-primary" /></div>
               <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{run.metrics.avg_response_time_sec}s</p>
             </div>
             <div className="bg-card p-5">
-              <div className="flex items-center justify-between"><p className="technical-label">Manual baseline</p><GaugeIcon className="size-4 text-muted-foreground" /></div>
+              <div className="flex items-center justify-between"><p className="technical-label">Doing it by hand</p><GaugeIcon className="size-4 text-muted-foreground" /></div>
               <p className="mt-5 font-mono text-4xl tracking-[-0.07em]">{Math.round(run.metrics.manual_baseline_sec / 60)}m</p>
             </div>
             <div className="bg-card p-5">
-              <div className="flex items-center justify-between"><p className="technical-label">Run status</p><ActivityIcon className="size-4 text-primary" /></div>
+              <div className="flex items-center justify-between"><p className="technical-label">Test status</p><ActivityIcon className="size-4 text-primary" /></div>
               <p className="mt-5 font-mono text-2xl text-primary">{run.status.toUpperCase()}</p>
             </div>
           </section>
@@ -229,8 +229,8 @@ export function EvaluationWorkbench({
 
       <Card>
         <CardHeader>
-          <CardTitle>Benchmark cases</CardTitle>
-          <CardDescription>Questions are backend-owned; this interface does not invent scores or labels.</CardDescription>
+          <CardTitle>The test questions</CardTitle>
+          <CardDescription>Fixed questions with known answers — the scores above come straight from the system, nothing is made up here.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {cases.map((item, index) => (

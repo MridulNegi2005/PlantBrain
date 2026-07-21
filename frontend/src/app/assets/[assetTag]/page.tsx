@@ -45,20 +45,20 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
   return (
     <div className="flex flex-col gap-6">
       <Link href="/assets" className={`${buttonVariants({ variant: "ghost", size: "sm" })} w-fit`}>
-        <ArrowLeftIcon data-icon="inline-start" /> Back to assets
+        <ArrowLeftIcon data-icon="inline-start" /> Back to equipment
       </Link>
       <PageHeader
         eyebrow={asset.asset_type}
         title={asset.asset_tag}
-        description={asset.summary ?? "No operational summary has been recorded for this asset."}
+        description={asset.summary ?? "No summary has been recorded for this equipment yet."}
         status={asset.plant_id.toUpperCase()}
       />
 
       <section className="grid divide-y divide-border border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0" aria-label="Asset metrics">
         {[
-          ["Evidence", "Linked records", asset.document_count],
-          ["Risk", "Open findings", asset.open_risks],
-          ["Compliance", "Evidence gaps", asset.compliance_gaps],
+          ["Documents", "Linked to this", asset.document_count],
+          ["Risks", "Need attention", asset.open_risks],
+          ["Compliance", "Missing records", asset.compliance_gaps],
         ].map(([code, label, value]) => (
           <div key={String(code)} className="p-5">
             <div className="flex items-center justify-between gap-4">
@@ -73,8 +73,8 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Maintenance and evidence timeline</CardTitle>
-            <CardDescription>Work orders, inspections, and incidents in operational sequence.</CardDescription>
+            <CardTitle>History</CardTitle>
+            <CardDescription>Work orders, inspections, and incidents, most recent first.</CardDescription>
           </CardHeader>
           <CardContent className="evidence-spine flex flex-col gap-5 pl-8">
             {timeline.map((item) => (
@@ -91,7 +91,7 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
                   href={`/documents/${encodeURIComponent(item.document_id)}`}
                   className="mt-2 inline-flex font-mono text-[0.68rem] text-primary underline-offset-4 hover:underline"
                 >
-                  Open evidence: {item.document_id}
+                  View document
                 </Link>
               </article>
             ))}
@@ -100,8 +100,8 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
 
         <Card>
           <CardHeader>
-            <CardTitle>Evidence packet</CardTitle>
-            <CardDescription>Documents linked to this asset by the ingestion layer.</CardDescription>
+            <CardTitle>Documents</CardTitle>
+            <CardDescription>Everything on file for this equipment.</CardDescription>
             <CardAction><FileTextIcon className="size-4 text-muted-foreground" /></CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -122,18 +122,18 @@ export default async function AssetProfilePage({ params }: { params: Promise<{ a
                 {index < documents.length - 1 ? <Separator /> : null}
               </div>
             ))}
-            {!documents.length ? <p className="text-sm text-muted-foreground">No linked documents returned.</p> : null}
+            {!documents.length ? <p className="text-sm text-muted-foreground">No documents on file yet.</p> : null}
           </CardContent>
         </Card>
       </section>
 
       <Card>
         <CardHeader>
-          <CardTitle>Follow the evidence graph</CardTitle>
-          <CardDescription>Inspect how this asset connects to work orders, failure modes, and procedures.</CardDescription>
+          <CardTitle>See how it connects</CardTitle>
+          <CardDescription>A visual map of how this equipment links to work orders, failure types, and procedures.</CardDescription>
           <CardAction>
             <Link href={`/graph?asset=${encodeURIComponent(asset.asset_tag)}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-              <GitBranchIcon data-icon="inline-start" /> Open graph
+              <GitBranchIcon data-icon="inline-start" /> Open map
             </Link>
           </CardAction>
         </CardHeader>

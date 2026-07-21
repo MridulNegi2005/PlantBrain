@@ -97,7 +97,7 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
         <CardContent>
           <form onSubmit={loadGraph}>
             <Field>
-              <FieldLabel htmlFor="graph-asset">Asset graph</FieldLabel>
+              <FieldLabel htmlFor="graph-asset">Show connections for</FieldLabel>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <InputGroup>
                   <InputGroupAddon><SearchIcon /></InputGroupAddon>
@@ -110,10 +110,10 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                 </InputGroup>
                 <Button type="submit" disabled={!assetTag.trim() || busy}>
                   {busy ? <Spinner data-icon="inline-start" /> : <GitBranchIcon data-icon="inline-start" />}
-                  Load graph
+                  Show map
                 </Button>
               </div>
-              <FieldDescription>Click a node to isolate its evidence-backed relationships.</FieldDescription>
+              <FieldDescription>Click any box to focus on just its connections.</FieldDescription>
               {request.error ? <p className="text-sm text-destructive">{request.error}</p> : null}
             </Field>
           </form>
@@ -124,8 +124,8 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
           <Card>
             <CardHeader>
-              <CardTitle>Relationship canvas</CardTitle>
-              <CardDescription>{graph.nodes.length} nodes · {graph.edges.length} relationships; confidence is shown when available</CardDescription>
+              <CardTitle>Connections map</CardTitle>
+              <CardDescription>{graph.nodes.length} items · {graph.edges.length} connections</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-hidden rounded-sm border bg-background">
@@ -190,8 +190,8 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
 
           <Card>
             <CardHeader>
-              <CardTitle>Selected node</CardTitle>
-              <CardDescription>{selectedNode ?? "Choose a node"}</CardDescription>
+              <CardTitle>What's selected</CardTitle>
+              <CardDescription>{selectedNode ?? "Click a box to see its connections"}</CardDescription>
             </CardHeader>
             <CardContent className="min-h-0">
               <ScrollArea className="h-[30rem] pr-3">
@@ -200,7 +200,7 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                     <div key={`${edge.source}-${edge.type}-${index}`}>
                       <div className="py-2">
                         <Badge variant="outline">
-                          {edge.confidence == null ? "Confidence not scored" : `${percent(edge.confidence)} confidence`}
+                          {edge.confidence == null ? "Confidence not scored" : `${percent(edge.confidence)} sure`}
                         </Badge>
                         <p className="mt-2 text-sm font-medium">{titleCase(edge.type)}</p>
                         <p className="mt-1 font-mono text-[0.68rem] leading-relaxed text-muted-foreground">{edge.source} → {edge.target}</p>
@@ -208,7 +208,7 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                       {index < connectedEdges.length - 1 ? <Separator /> : null}
                     </div>
                   ))}
-                  {!connectedEdges.length ? <p className="text-sm text-muted-foreground">No connected edges returned for this node.</p> : null}
+                  {!connectedEdges.length ? <p className="text-sm text-muted-foreground">Nothing connected to this item.</p> : null}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -218,11 +218,11 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
         <Empty className="min-h-[30rem] border">
           <EmptyHeader>
             <EmptyMedia variant="icon">{busy ? <Spinner /> : <GitBranchIcon />}</EmptyMedia>
-            <EmptyTitle>{busy ? `Loading ${assetTag.trim().toUpperCase()}` : "No graph loaded"}</EmptyTitle>
+            <EmptyTitle>{busy ? `Loading ${assetTag.trim().toUpperCase()}…` : "No map yet"}</EmptyTitle>
             <EmptyDescription>
               {busy
-                ? "The previous graph has been cleared while this asset is retrieved."
-                : "Start the backend or enter an asset tag with graph data."}
+                ? "Building the connections map…"
+                : "Enter a piece of equipment above to see how it connects to everything else."}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

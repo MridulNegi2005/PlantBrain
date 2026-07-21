@@ -23,19 +23,19 @@ export default async function DocumentsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Evidence register"
-        title="Every source entering the knowledge layer."
-        description="Review document type, ingestion state, linked asset tags, and provenance identifiers without leaving the operational context."
+        eyebrow="Documents"
+        title="Every document PlantBrain has read."
+        description="See each document's type, which equipment it mentions, and whether it's been fully processed and is ready to search."
         status={result ? `${result.total} RECORDS` : "UNAVAILABLE"}
       />
-      {!result ? <DataUnavailable label="Document register" /> : null}
+      {!result ? <DataUnavailable label="Documents" /> : null}
       <section className="border border-border bg-card" aria-labelledby="document-register-title">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
           <div>
-            <p className="technical-label">Source registry</p>
-            <h2 id="document-register-title" className="mt-1 text-lg font-semibold tracking-[-0.02em]">Document register</h2>
+            <p className="technical-label">All documents</p>
+            <h2 id="document-register-title" className="mt-1 text-lg font-semibold tracking-[-0.02em]">Document library</h2>
           </div>
-          <p className="font-mono text-[0.62rem] text-muted-foreground uppercase">GET /api/documents</p>
+          <p className="font-mono text-[0.62rem] text-muted-foreground uppercase">{result?.total ?? 0} total</p>
         </div>
         <div>
           <Table>

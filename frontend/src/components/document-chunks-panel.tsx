@@ -11,14 +11,14 @@ export function DocumentChunksPanel({ chunks }: { chunks: DocumentChunksResponse
     <section className="border border-border bg-card" aria-labelledby="evidence-chunks-title">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
         <div>
-          <p className="technical-label">Retrieval surface</p>
+          <p className="technical-label">Inside this document</p>
           <h2 id="evidence-chunks-title" className="mt-1 text-lg font-semibold tracking-[-0.02em]">
-            Page-grounded evidence chunks
+            Searchable passages
           </h2>
         </div>
         <div className="flex items-center gap-3">
           <Badge variant={hasNoExtractedEvidence ? "destructive" : "outline"}>
-            {hasNoExtractedEvidence ? "No extracted chunks" : `${chunks.total} chunks`}
+            {hasNoExtractedEvidence ? "Not processed yet" : `${chunks.total} passages`}
           </Badge>
           <BracesIcon className="size-4 text-muted-foreground" />
         </div>
@@ -28,9 +28,9 @@ export function DocumentChunksPanel({ chunks }: { chunks: DocumentChunksResponse
         <div className="p-4 sm:p-5">
           <Alert>
             <FileSearchIcon />
-            <AlertTitle>Extraction has not produced real chunks yet</AlertTitle>
+            <AlertTitle>This document hasn't been processed yet</AlertTitle>
             <AlertDescription>
-              No usable evidence chunks are available. Run ingestion successfully before using this document in retrieval or citations.
+              PlantBrain hasn't pulled any searchable text from this document yet. Once it's processed, its passages will appear here and can be searched and cited.
             </AlertDescription>
           </Alert>
         </div>
@@ -51,12 +51,8 @@ export function DocumentChunksPanel({ chunks }: { chunks: DocumentChunksResponse
             <div className="flex flex-wrap content-start gap-2 lg:max-w-48 lg:justify-end">
               {chunk.asset_tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
               {chunk.bbox ? (
-                <Badge variant="secondary">
-                  XY {Math.round(chunk.bbox.x0)},{Math.round(chunk.bbox.y0)}
-                </Badge>
-              ) : (
-                <Badge variant="outline">No coordinates</Badge>
-              )}
+                <Badge variant="secondary">Located on page</Badge>
+              ) : null}
             </div>
           </li>
         ))}

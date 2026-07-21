@@ -10,16 +10,16 @@ export default function NotFound() {
         <SearchXIcon className="size-6" />
       </span>
       <div className="max-w-md">
-        <p className="font-mono text-xs tracking-[0.16em] text-primary uppercase">Record not found</p>
+        <p className="font-mono text-xs tracking-[0.16em] text-primary uppercase">Not found</p>
         <h1 className="mt-3 font-heading text-3xl font-semibold tracking-tight">
-          This evidence record is not in the plant index.
+          We couldn't find that page.
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          The identifier may be stale, or the source has not been ingested into PlantBrain yet.
+          The link may be out of date, or this document hasn't been added to PlantBrain yet.
         </p>
       </div>
       <Link href="/documents" className={buttonVariants({ variant: "outline" })}>
-        <ArrowLeftIcon data-icon="inline-start" /> Back to document register
+        <ArrowLeftIcon data-icon="inline-start" /> Back to documents
       </Link>
     </div>
   )

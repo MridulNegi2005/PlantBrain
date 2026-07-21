@@ -26,16 +26,16 @@ export function SimilarLessonsPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Similar lessons from plant memory</CardTitle>
+        <CardTitle>Similar failures from the past</CardTitle>
         <CardDescription>
-          Historical incidents retrieved for “{failureMode}”. Similarity supports comparison; it does not prove the same root cause.
+          Past incidents that look like “{failureMode}”. These are for comparison — a close match doesn't guarantee the same cause.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {error ? (
           <Alert variant="destructive">
             <BookOpenCheckIcon />
-            <AlertTitle>Historical lessons unavailable</AlertTitle>
+            <AlertTitle>Couldn't load past failures</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : incidents?.length ? (
@@ -66,7 +66,7 @@ export function SimilarLessonsPanel({
                       </Badge>
                     ))
                   ) : (
-                    <Badge variant="destructive">No citation returned</Badge>
+                    <Badge variant="destructive">No source listed</Badge>
                   )}
                 </div>
               </article>
@@ -75,9 +75,9 @@ export function SimilarLessonsPanel({
         ) : (
           <div className="rounded-sm border border-dashed p-6 text-center">
             <BookOpenCheckIcon className="mx-auto size-6 text-muted-foreground" />
-            <p className="mt-3 text-sm font-medium">No comparable incidents returned</p>
+            <p className="mt-3 text-sm font-medium">No similar past failures found</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              The backend found no historical lessons for this failure mode.
+              There aren't any matching incidents on record for this type of failure.
             </p>
           </div>
         )}

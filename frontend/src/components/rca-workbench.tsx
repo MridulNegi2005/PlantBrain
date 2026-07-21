@@ -23,6 +23,17 @@ import { findSimilarLessons, generateRca } from "@/lib/api/client"
 import type { RcaReport, SimilarIncident } from "@/lib/api/types"
 import { percent } from "@/lib/format"
 
+function withheldReason(reason?: string | null) {
+  switch (reason) {
+    case "unsafe_evidence":
+      return "PlantBrain blocked a suspicious document and won't guess without safe sources."
+    case "no_supporting_evidence":
+      return "PlantBrain couldn't find documents to back up a diagnosis, so it won't guess."
+    default:
+      return reason ?? "No diagnosis could be produced."
+  }
+}
+
 export function RcaWorkbench() {
   const [assetTag, setAssetTag] = useState("P-204A")
   const [issue, setIssue] = useState("Repeated seal leakage and abnormal vibration")
@@ -75,28 +86,28 @@ export function RcaWorkbench() {
     <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
       <Card className="h-fit">
         <CardHeader>
-          <CardTitle>Investigation scope</CardTitle>
-          <CardDescription>Describe the observed asset issue.</CardDescription>
+          <CardTitle>What happened?</CardTitle>
+          <CardDescription>Describe the problem you're seeing.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={run}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="rca-asset">Asset tag</FieldLabel>
+                <FieldLabel htmlFor="rca-asset">Equipment tag</FieldLabel>
                 <InputGroup>
                   <InputGroupAddon><SearchCheckIcon /></InputGroupAddon>
                   <InputGroupInput id="rca-asset" value={assetTag} maxLength={64} onChange={(event) => setAssetTag(event.target.value.toUpperCase())} />
                 </InputGroup>
               </Field>
               <Field>
-                <FieldLabel htmlFor="rca-issue">Observed issue</FieldLabel>
+                <FieldLabel htmlFor="rca-issue">What's going wrong</FieldLabel>
                 <InputGroup>
                   <InputGroupTextarea id="rca-issue" value={issue} maxLength={2_000} onChange={(event) => setIssue(event.target.value)} />
                 </InputGroup>
-                <FieldDescription>Use symptoms and recurrence, not a presumed cause.</FieldDescription>
+                <FieldDescription>Describe the symptoms — no need to guess the cause.</FieldDescription>
               </Field>
               <Field>
-                <FieldLabel htmlFor="rca-failure-mode">Failure mode to compare</FieldLabel>
+                <FieldLabel htmlFor="rca-failure-mode">Type of failure to compare</FieldLabel>
                 <InputGroup>
                   <InputGroupAddon><SearchCheckIcon /></InputGroupAddon>
                   <InputGroupInput
@@ -106,12 +117,12 @@ export function RcaWorkbench() {
                     onChange={(event) => setFailureMode(event.target.value)}
                   />
                 </InputGroup>
-                <FieldDescription>Used to retrieve similar historical incidents independently of the RCA.</FieldDescription>
+                <FieldDescription>Used to find similar past failures on record.</FieldDescription>
               </Field>
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
               <Button type="submit" disabled={!assetTag.trim() || !issue.trim() || !failureMode.trim() || busy}>
                 {busy ? <Spinner data-icon="inline-start" /> : <SearchCheckIcon data-icon="inline-start" />}
-                {busy ? "Investigating" : "Run investigation"}
+                {busy ? "Working…" : "Find likely causes"}
               </Button>
             </FieldGroup>
           </form>
@@ -125,14 +136,14 @@ export function RcaWorkbench() {
               {report.reason ? (
                 <Alert variant="destructive">
                   <AlertTriangleIcon />
-                  <AlertTitle>RCA withheld</AlertTitle>
-                  <AlertDescription>{report.reason}</AlertDescription>
+                  <AlertTitle>No diagnosis available</AlertTitle>
+                  <AlertDescription>{withheldReason(report.reason)}</AlertDescription>
                 </Alert>
               ) : null}
               {report.note ? (
                 <Alert>
                   <SearchCheckIcon />
-                  <AlertTitle>Backend note</AlertTitle>
+                  <AlertTitle>Note</AlertTitle>
                   <AlertDescription>{report.note}</AlertDescription>
                 </Alert>
               ) : null}
@@ -147,7 +158,7 @@ export function RcaWorkbench() {
                   <Card key={cause.cause}>
                     <CardHeader>
                       <CardTitle>{cause.cause}</CardTitle>
-                      <CardDescription>Evidence-backed likely cause</CardDescription>
+                      <CardDescription>Likely cause, backed by documents</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-4">
                       <Progress value={cause.confidence * 100}>
@@ -165,8 +176,8 @@ export function RcaWorkbench() {
               {report.citations?.length ? (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Investigation evidence</CardTitle>
-                    <CardDescription>Report-level citations returned by the RCA agent.</CardDescription>
+                    <CardTitle>Sources</CardTitle>
+                    <CardDescription>The documents this diagnosis is based on.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <CitationList citations={report.citations} />
@@ -176,13 +187,13 @@ export function RcaWorkbench() {
               <div className="grid gap-4 lg:grid-cols-2">
                 <Alert>
                   <AlertTriangleIcon />
-                  <AlertTitle>Missing checks</AlertTitle>
+                  <AlertTitle>Still worth checking</AlertTitle>
                   <AlertDescription>
                     {report.missing_checks.length ? (
                       <ul className="flex list-disc flex-col gap-1 pl-4">
                         {report.missing_checks.map((check) => <li key={check}>{check}</li>)}
                       </ul>
-                    ) : <p>No missing checks were returned.</p>}
+                    ) : <p>Nothing outstanding.</p>}
                   </AlertDescription>
                 </Alert>
                 <Alert>
@@ -193,7 +204,7 @@ export function RcaWorkbench() {
                       <ol className="flex list-decimal flex-col gap-1 pl-4">
                         {report.recommended_actions.map((action) => <li key={action}>{action}</li>)}
                       </ol>
-                    ) : <p>No recommended actions were returned.</p>}
+                    ) : <p>No actions suggested.</p>}
                   </AlertDescription>
                 </Alert>
               </div>
@@ -210,8 +221,8 @@ export function RcaWorkbench() {
         <Card className="min-h-[30rem] items-center justify-center">
           <CardContent className="text-center">
             {busy ? <Spinner className="mx-auto size-8" /> : <SearchCheckIcon className="mx-auto size-8 text-muted-foreground" />}
-            <p className="mt-4 font-medium">{busy ? "Investigating plant memory" : "No investigation generated yet"}</p>
-            <p className="mt-1 text-sm text-muted-foreground">Run the prepared P-204A investigation to retrieve likely causes, evidence, and similar lessons.</p>
+            <p className="mt-4 font-medium">{busy ? "Looking through the records…" : "No diagnosis yet"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">Try the example: describe the issue with pump P-204A to see likely causes, sources, and similar past failures.</p>
           </CardContent>
         </Card>
       )}

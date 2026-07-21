@@ -55,24 +55,24 @@ export function ComplianceWorkbench() {
     <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
       <Card className="h-fit">
         <CardHeader>
-          <CardTitle>Evidence check</CardTitle>
-          <CardDescription>Compare an asset packet with its required evidence.</CardDescription>
+          <CardTitle>Check compliance</CardTitle>
+          <CardDescription>Pick a piece of equipment to check its required paperwork.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={run}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="compliance-asset">Asset tag</FieldLabel>
+                <FieldLabel htmlFor="compliance-asset">Equipment tag</FieldLabel>
                 <InputGroup>
                   <InputGroupAddon><ClipboardCheckIcon /></InputGroupAddon>
                   <InputGroupInput id="compliance-asset" value={assetTag} maxLength={64} onChange={(event) => setAssetTag(event.target.value.toUpperCase())} />
                 </InputGroup>
-                <FieldDescription>V-301 is prepared with an intentional certificate gap.</FieldDescription>
+                <FieldDescription>Try V-301 — it's missing a certificate on purpose.</FieldDescription>
               </Field>
               {request.error ? <p className="text-sm text-destructive">{request.error}</p> : null}
               <Button type="submit" disabled={!assetTag.trim() || busy}>
                 {busy ? <Spinner data-icon="inline-start" /> : <ClipboardCheckIcon data-icon="inline-start" />}
-                {busy ? "Checking" : "Check evidence"}
+                {busy ? "Checking" : "Check compliance"}
               </Button>
             </FieldGroup>
           </form>
@@ -84,7 +84,7 @@ export function ComplianceWorkbench() {
           <Card>
             <CardHeader>
               <CardDescription>{report.asset}</CardDescription>
-              <CardTitle>{report.requirement ?? "Requirement not identified"}</CardTitle>
+              <CardTitle>{report.requirement ?? "Couldn't identify the requirement"}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               <StatusBadge status={report.status} />
@@ -95,21 +95,21 @@ export function ComplianceWorkbench() {
           {report.status === "gap" ? (
             <Alert variant="destructive">
               <FileWarningIcon />
-              <AlertTitle>Required evidence is missing</AlertTitle>
-              <AlertDescription>{report.missing_evidence ?? "The API did not specify the missing evidence."}</AlertDescription>
+              <AlertTitle>Required paperwork is missing</AlertTitle>
+              <AlertDescription>{report.missing_evidence ?? "The specific missing item wasn't identified."}</AlertDescription>
             </Alert>
           ) : report.status === "ok" || report.status === "pass" ? (
             <Alert>
               <ShieldCheckIcon />
-              <AlertTitle>Evidence requirement satisfied</AlertTitle>
-              <AlertDescription>The returned packet supports this compliance requirement.</AlertDescription>
+              <AlertTitle>All required paperwork is on file</AlertTitle>
+              <AlertDescription>This requirement is fully backed by documents on record.</AlertDescription>
             </Alert>
           ) : (
             <Alert>
               <CircleHelpIcon />
-              <AlertTitle>Compliance result is inconclusive</AlertTitle>
+              <AlertTitle>Couldn't reach a clear result</AlertTitle>
               <AlertDescription>
-                The backend could not determine a pass or gap. Review the evidence packet before taking action.
+                PlantBrain couldn't clearly confirm or flag this. Review the documents before acting.
               </AlertDescription>
             </Alert>
           )}
@@ -117,7 +117,7 @@ export function ComplianceWorkbench() {
           {report.note ? (
             <Alert>
               <CircleHelpIcon />
-              <AlertTitle>Backend note</AlertTitle>
+              <AlertTitle>Note</AlertTitle>
               <AlertDescription>{report.note}</AlertDescription>
             </Alert>
           ) : null}
@@ -125,19 +125,19 @@ export function ComplianceWorkbench() {
           {report.reason ? (
             <Alert>
               <CircleHelpIcon />
-              <AlertTitle>Why the result is inconclusive</AlertTitle>
+              <AlertTitle>Why it's unclear</AlertTitle>
               <AlertDescription>{titleCase(report.reason)}</AlertDescription>
             </Alert>
           ) : null}
 
           <Card>
             <CardHeader>
-              <CardTitle>Evidence found</CardTitle>
-              <CardDescription>Documents matched by the compliance agent.</CardDescription>
+              <CardTitle>Documents on file</CardTitle>
+              <CardDescription>The records PlantBrain found for this requirement.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               {report.evidence_found.map((evidence) => <Badge key={evidence} variant="outline">{evidence}</Badge>)}
-              {!report.evidence_found.length ? <p className="text-sm text-muted-foreground">No supporting evidence was returned.</p> : null}
+              {!report.evidence_found.length ? <p className="text-sm text-muted-foreground">No matching documents were found.</p> : null}
             </CardContent>
             {report.citations ? (
               <CardContent className="border-t border-border pt-4">
@@ -150,11 +150,11 @@ export function ComplianceWorkbench() {
         <Card className="min-h-[28rem] items-center justify-center">
           <CardContent className="text-center">
             {busy ? <Spinner className="mx-auto size-8" /> : <ClipboardCheckIcon className="mx-auto size-8 text-muted-foreground" />}
-            <p className="mt-4 font-medium">{busy ? "Checking the evidence packet" : "No evidence check run"}</p>
+            <p className="mt-4 font-medium">{busy ? "Checking the records…" : "No check run yet"}</p>
             <p className="mt-1 text-sm text-muted-foreground">
               {busy
-                ? "The previous result has been cleared while this asset is checked."
-                : "Run V-301 to inspect the missing pressure-test certificate story."}
+                ? "Clearing the previous result…"
+                : "Try V-301 to see a missing pressure-test certificate flagged."}
             </p>
           </CardContent>
         </Card>

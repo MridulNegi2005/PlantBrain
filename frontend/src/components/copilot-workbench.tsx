@@ -66,6 +66,16 @@ type EvidenceSelection = {
   graphPath: string[]
 }
 
+function reasonLabel(reason?: string | null) {
+  switch (reason) {
+    case "unsafe_evidence":
+      return "Blocked a suspicious document"
+    case "no_supporting_evidence":
+    default:
+      return "No supporting document found"
+  }
+}
+
 export function CopilotWorkbench() {
   const [question, setQuestion] = useState("Why did P-204A fail twice this month?")
   const [assetTag, setAssetTag] = useState("P-204A")
@@ -103,11 +113,11 @@ export function CopilotWorkbench() {
             <div className="flex items-center gap-2">
               <BrainCircuitIcon className="size-4 text-primary" />
               <div>
-                <p className="text-sm font-medium">Evidence-grounded copilot</p>
-                <p className="font-mono text-[0.62rem] text-muted-foreground">Next query: {assetTag || "plant-wide"}</p>
+                <p className="text-sm font-medium">Ask PlantBrain</p>
+                <p className="font-mono text-[0.62rem] text-muted-foreground">Focused on: {assetTag || "the whole plant"}</p>
               </div>
             </div>
-            <Badge variant="outline">No source · no answer</Badge>
+            <Badge variant="outline">Always cites its sources</Badge>
           </div>
 
           <div className="min-h-0 flex-1">
@@ -120,9 +130,9 @@ export function CopilotWorkbench() {
                         <Empty className="min-h-[24rem]">
                           <EmptyHeader>
                             <EmptyMedia variant="icon"><BotIcon /></EmptyMedia>
-                            <EmptyTitle>Ask from the plant record</EmptyTitle>
+                            <EmptyTitle>Ask a question to get started</EmptyTitle>
                             <EmptyDescription>
-                              PlantBrain answers only when retrieved evidence supports the response. Start with the prepared P-204A investigation.
+                              PlantBrain only answers when it can back it up with a real document. Try the example question below about pump P-204A.
                             </EmptyDescription>
                           </EmptyHeader>
                         </Empty>
@@ -151,7 +161,7 @@ export function CopilotWorkbench() {
                                 <Avatar><AvatarFallback>PB</AvatarFallback></Avatar>
                               </MessageAvatar>
                               <MessageContent>
-                                <MessageHeader>PlantBrain · cited reasoning</MessageHeader>
+                                <MessageHeader>PlantBrain · answer with sources</MessageHeader>
                                 {grounded ? (
                                   <Bubble variant="ghost">
                                     <BubbleContent className="flex flex-col gap-4">
@@ -168,7 +178,7 @@ export function CopilotWorkbench() {
                                       {exchange.response.missing_evidence?.length ? (
                                         <Alert>
                                           <FileSearchIcon />
-                                          <AlertTitle>Evidence still missing</AlertTitle>
+                                          <AlertTitle>What's still missing</AlertTitle>
                                           <AlertDescription>
                                             <ul className="flex list-disc flex-col gap-1 pl-4">
                                               {exchange.response.missing_evidence.map((item) => <li key={item}>{item}</li>)}
@@ -179,7 +189,7 @@ export function CopilotWorkbench() {
 
                                       {exchange.response.recommended_next_actions?.length ? (
                                         <div>
-                                          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Recommended checks</p>
+                                          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">What to check next</p>
                                           <ol className="mt-2 flex list-decimal flex-col gap-1 pl-5 text-sm">
                                             {exchange.response.recommended_next_actions.map((action) => <li key={action}>{action}</li>)}
                                           </ol>
@@ -192,7 +202,7 @@ export function CopilotWorkbench() {
                                     <BubbleContent>
                                       <div className="flex items-start gap-2">
                                         <ShieldXIcon className="mt-0.5 size-4 shrink-0" />
-                                        <span>No answer was returned because supporting citations are missing.</span>
+                                        <span>No answer — PlantBrain couldn't find a document to back this up, so it won't guess.</span>
                                       </div>
                                     </BubbleContent>
                                   </Bubble>
@@ -218,7 +228,7 @@ export function CopilotWorkbench() {
                                       </Button>
                                     </>
                                   ) : (
-                                    <Badge variant="destructive">{exchange.response.reason ?? "no_supporting_evidence"}</Badge>
+                                    <Badge variant="destructive">{reasonLabel(exchange.response.reason)}</Badge>
                                   )}
                                 </MessageFooter>
                               </MessageContent>
@@ -233,7 +243,7 @@ export function CopilotWorkbench() {
                         <Message>
                           <MessageAvatar><Avatar><AvatarFallback>PB</AvatarFallback></Avatar></MessageAvatar>
                           <MessageContent>
-                            <Bubble variant="muted"><BubbleContent className="flex items-center gap-2"><Spinner /> Retrieving cited evidence…</BubbleContent></Bubble>
+                            <Bubble variant="muted"><BubbleContent className="flex items-center gap-2"><Spinner /> Reading the documents…</BubbleContent></Bubble>
                           </MessageContent>
                         </Message>
                       </MessageScrollerItem>
@@ -261,7 +271,7 @@ export function CopilotWorkbench() {
                         event.currentTarget.form?.requestSubmit()
                       }
                     }}
-                    placeholder="Ask an evidence-backed operational question…"
+                    placeholder="e.g. Why did pump P-204A fail twice this month?"
                     aria-invalid={Boolean(error)}
                   />
                   <InputGroupAddon align="block-end" className="justify-between">
@@ -280,9 +290,9 @@ export function CopilotWorkbench() {
 
         <aside className="flex flex-col gap-4">
           <div className="rounded-sm border bg-card p-4">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Query scope</p>
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Focus the question</p>
             <Field className="mt-4">
-              <FieldLabel htmlFor="asset-scope">Asset tag</FieldLabel>
+              <FieldLabel htmlFor="asset-scope">Equipment tag</FieldLabel>
               <InputGroup>
                 <InputGroupAddon><BrainCircuitIcon /></InputGroupAddon>
                 <InputGroupTextarea
@@ -294,17 +304,17 @@ export function CopilotWorkbench() {
                   className="min-h-8"
                 />
               </InputGroup>
-              <FieldDescription>Leave blank for plant-wide retrieval.</FieldDescription>
+              <FieldDescription>Leave blank to search the whole plant.</FieldDescription>
             </Field>
           </div>
           <div className="rounded-sm border bg-card p-4">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Answer contract</p>
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Every answer includes</p>
             <div className="mt-4 flex flex-col gap-3 text-sm text-muted-foreground">
-              <p>Direct answer grounded in retrieved chunks.</p>
+              <p>A direct answer, drawn only from your documents.</p>
               <Separator />
-              <p>Confidence and exact source citations.</p>
+              <p>The exact sources it used, and how confident it is.</p>
               <Separator />
-              <p>Missing evidence and next checks.</p>
+              <p>Anything it couldn't find, and what to check next.</p>
             </div>
           </div>
         </aside>
@@ -318,8 +328,8 @@ export function CopilotWorkbench() {
       >
         <SheetContent className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>Source evidence</SheetTitle>
-            <SheetDescription>Exact documents and page-level excerpts supporting this answer.</SheetDescription>
+            <SheetTitle>Where this answer came from</SheetTitle>
+            <SheetDescription>The exact documents and passages behind this answer.</SheetDescription>
           </SheetHeader>
           <Separator />
           <ScrollArea className="min-h-0 flex-1 px-4">
@@ -328,7 +338,7 @@ export function CopilotWorkbench() {
             </div>
             {selectedEvidence?.graphPath.length ? (
               <div className="mb-6 rounded-sm border bg-muted p-4">
-                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Graph reasoning path</p>
+                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">How PlantBrain connected the facts</p>
                 <p className="mt-2 font-mono text-xs leading-relaxed">{selectedEvidence.graphPath.join(" → ")}</p>
               </div>
             ) : null}

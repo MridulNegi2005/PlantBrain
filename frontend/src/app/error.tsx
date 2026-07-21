@@ -10,9 +10,9 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
     <div className="mx-auto flex min-h-[60vh] max-w-xl items-center">
       <Alert variant="destructive">
         <AlertTriangleIcon />
-        <AlertTitle>This view could not be loaded</AlertTitle>
+        <AlertTitle>Something went wrong loading this page</AlertTitle>
         <AlertDescription className="flex flex-col gap-4">
-          <p>Check that the PlantBrain backend is running and reachable at the configured API URL.</p>
+          <p>We couldn't reach PlantBrain just now. Please check your connection and try again.</p>
           <Button variant="outline" onClick={reset} className="w-fit">
             <RefreshCwIcon data-icon="inline-start" />
             Try again

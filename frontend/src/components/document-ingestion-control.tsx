@@ -43,7 +43,7 @@ export function DocumentIngestionControl({
     const current = await getIngestionJob(id)
     setJob(current)
     if (current.status === "failed") {
-      throw new Error(current.error ?? "The ingestion job failed.")
+      throw new Error(current.error ?? "Processing failed. Please try again.")
     }
     return current
   }
@@ -72,14 +72,14 @@ export function DocumentIngestionControl({
 
       if (!reachedTerminalState) {
         setNotice(
-          "The backend still reports this job as active. Polling paused; use Check latest state to refresh it without creating another job."
+          "Still processing. Use Check latest to see the newest status without starting over."
         )
       }
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message
-          : "The document could not be re-ingested."
+          : "Couldn't re-process this document. Please try again."
       )
     } finally {
       setBusy(false)
@@ -94,7 +94,7 @@ export function DocumentIngestionControl({
     try {
       const current = await refreshJob(jobId)
       if (current.status !== "completed") {
-        setNotice("The job is still active. Its latest backend state is shown below.")
+        setNotice("Still processing. The latest step is shown above.")
       }
     } catch (caught) {
       setError(
@@ -116,15 +116,15 @@ export function DocumentIngestionControl({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ingestion control</CardTitle>
+        <CardTitle>Re-process this document</CardTitle>
         <CardDescription>
-          Re-run extraction, chunking, embeddings, and graph linking for this evidence record.
+          Run PlantBrain over this document again — useful if it was updated or didn't finish the first time.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-sm border bg-background p-3">
           <div>
-            <p className="text-xs text-muted-foreground">Current backend state</p>
+            <p className="text-xs text-muted-foreground">Current status</p>
             <p className="mt-1 font-mono text-xs">{jobId ?? documentId}</p>
           </div>
           <StatusBadge status={currentStatus} />
@@ -134,13 +134,13 @@ export function DocumentIngestionControl({
 
         {error ? (
           <Alert variant="destructive">
-            <AlertTitle>Ingestion failed</AlertTitle>
+            <AlertTitle>Processing failed</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
         {notice ? (
           <Alert>
-            <AlertTitle>Job still active</AlertTitle>
+            <AlertTitle>Still processing</AlertTitle>
             <AlertDescription>{notice}</AlertDescription>
           </Alert>
         ) : null}
@@ -149,12 +149,12 @@ export function DocumentIngestionControl({
         {jobId ? (
           <Button variant="outline" onClick={checkLatestState} disabled={busy}>
             {busy ? <Spinner data-icon="inline-start" /> : <RefreshCwIcon data-icon="inline-start" />}
-            Check latest state
+            Check latest
           </Button>
         ) : null}
         <Button onClick={runIngestion} disabled={busy}>
           {busy ? <Spinner data-icon="inline-start" /> : <RotateCcwIcon data-icon="inline-start" />}
-          {busy ? "Checking pipeline" : "Re-run ingestion"}
+          {busy ? "Working…" : "Re-process"}
         </Button>
       </CardFooter>
     </Card>

@@ -7,9 +7,9 @@ export default function CompliancePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Compliance evidence agent"
-        title="Find the missing proof before the auditor does."
-        description="Check inspection certificates, SOP revisions, closure readings, and audit packets while keeping gaps distinct from verified evidence."
+        eyebrow="Compliance"
+        title="Find the missing paperwork before the auditor does."
+        description="PlantBrain checks each piece of equipment for the certificates, procedures, and readings it should have on file — and flags what's missing."
         status="EVIDENCE MATCHING"
       />
       <ComplianceWorkbench />

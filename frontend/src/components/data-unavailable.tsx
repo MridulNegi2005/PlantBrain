@@ -6,9 +6,9 @@ export function DataUnavailable({ label }: { label: string }) {
   return (
     <Alert variant="destructive">
       <AlertTriangleIcon />
-      <AlertTitle>{label} is unavailable</AlertTitle>
+      <AlertTitle>{label} couldn't load</AlertTitle>
       <AlertDescription>
-        Start the FastAPI service on port 8000, then refresh this page. No fallback data is being shown.
+        We couldn't reach the PlantBrain service. Please check your connection and refresh the page.
       </AlertDescription>
     </Alert>
   )
