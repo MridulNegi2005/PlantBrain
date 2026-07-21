@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import { AlertTriangleIcon, SearchCheckIcon, WrenchIcon } from "lucide-react"
 
 import { CitationList } from "@/components/citation-list"
@@ -45,12 +45,36 @@ export function RcaWorkbench() {
   const [error, setError] = useState<string | null>(null)
   const [lessonsError, setLessonsError] = useState<string | null>(null)
   const [assets, setAssets] = useState<AssetSummary[]>([])
+  const [assetMenuOpen, setAssetMenuOpen] = useState(false)
+  const assetFieldRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     getAssets()
       .then((result) => setAssets(result.items))
       .catch(() => setAssets([]))
   }, [])
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (assetFieldRef.current && !assetFieldRef.current.contains(event.target as Node)) {
+        setAssetMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handlePointerDown)
+    return () => document.removeEventListener("mousedown", handlePointerDown)
+  }, [])
+
+  const matchingAssets = useMemo(() => {
+    const query = assetTag.trim().toLowerCase()
+    const pool = query
+      ? assets.filter(
+          (asset) =>
+            asset.asset_tag.toLowerCase().includes(query) ||
+            asset.asset_type.toLowerCase().includes(query)
+        )
+      : assets
+    return pool.slice(0, 8)
+  }, [assets, assetTag])
 
   async function run(event: FormEvent) {
     event.preventDefault()
@@ -101,24 +125,43 @@ export function RcaWorkbench() {
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="rca-asset">Equipment tag</FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon><SearchCheckIcon /></InputGroupAddon>
-                  <InputGroupInput
-                    id="rca-asset"
-                    value={assetTag}
-                    maxLength={64}
-                    list="rca-asset-options"
-                    autoComplete="off"
-                    onChange={(event) => setAssetTag(event.target.value.toUpperCase())}
-                  />
-                </InputGroup>
-                <datalist id="rca-asset-options">
-                  {assets.map((asset) => (
-                    <option key={asset.asset_tag} value={asset.asset_tag}>
-                      {asset.asset_type}
-                    </option>
-                  ))}
-                </datalist>
+                <div ref={assetFieldRef} className="relative">
+                  <InputGroup>
+                    <InputGroupAddon><SearchCheckIcon /></InputGroupAddon>
+                    <InputGroupInput
+                      id="rca-asset"
+                      value={assetTag}
+                      maxLength={64}
+                      autoComplete="off"
+                      onFocus={() => setAssetMenuOpen(true)}
+                      onChange={(event) => {
+                        setAssetTag(event.target.value.toUpperCase())
+                        setAssetMenuOpen(true)
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") setAssetMenuOpen(false)
+                      }}
+                    />
+                  </InputGroup>
+                  {assetMenuOpen && matchingAssets.length ? (
+                    <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto border border-border bg-card shadow-lg">
+                      {matchingAssets.map((asset) => (
+                        <button
+                          key={asset.asset_tag}
+                          type="button"
+                          onClick={() => {
+                            setAssetTag(asset.asset_tag)
+                            setAssetMenuOpen(false)
+                          }}
+                          className="flex w-full items-center justify-between gap-3 border-b border-border px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-muted"
+                        >
+                          <span className="font-mono text-sm font-semibold text-primary">{asset.asset_tag}</span>
+                          <span className="text-xs text-muted-foreground">{asset.asset_type}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
                 <FieldDescription>Start typing to pick from your plant's equipment.</FieldDescription>
               </Field>
               <Field>
