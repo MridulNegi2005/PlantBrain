@@ -164,7 +164,7 @@ export function CopilotWorkbench() {
                                 <MessageHeader>PlantBrain · answer with sources</MessageHeader>
                                 {grounded ? (
                                   <Bubble variant="ghost">
-                                    <BubbleContent className="flex flex-col gap-4">
+                                    <BubbleContent className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
                                       <p className="text-base leading-relaxed">{exchange.response.answer}</p>
 
                                       {exchange.response.note ? (

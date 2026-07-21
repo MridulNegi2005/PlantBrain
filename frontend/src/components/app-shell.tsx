@@ -171,7 +171,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <main id="main-content" className="mx-auto min-h-[calc(100vh-3rem)] w-full max-w-[100rem] p-4 sm:p-6 lg:p-8 xl:p-10">
-          {children}
+          <div key={pathname} className="rise">
+            {children}
+          </div>
         </main>
       </div>
     </div>

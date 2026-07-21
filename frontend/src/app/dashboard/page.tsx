@@ -59,9 +59,9 @@ export default async function DashboardPage() {
             Live data
           </span>
         </div>
-        <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x xl:grid-cols-4 xl:divide-y-0">
+        <div className="stagger grid divide-y divide-border sm:grid-cols-2 sm:divide-x xl:grid-cols-4 xl:divide-y-0">
           {metrics.map((metric) => (
-            <div key={metric.code} className="min-h-40 p-5">
+            <div key={metric.code} className="min-h-40 p-5 transition-colors hover:bg-muted/40">
               <div className="flex items-start justify-between gap-4">
                 <span className="font-mono text-[0.62rem] font-semibold text-primary">{metric.code}</span>
                 <span className="font-mono text-[0.58rem] tracking-[0.08em] text-muted-foreground uppercase">{metric.detail}</span>
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
               <Link
                 key={asset.asset_tag}
                 href={`/assets/${encodeURIComponent(asset.asset_tag)}`}
-                className="group grid gap-3 border-b border-border px-4 py-4 transition-colors last:border-b-0 hover:bg-muted sm:grid-cols-[3rem_8rem_minmax(0,1fr)_auto] sm:items-center sm:px-5"
+                className="group grid gap-3 border-b border-border px-4 py-4 transition-colors last:border-b-0 hover:bg-muted sm:grid-cols-[3rem_8rem_minmax(0,1fr)_auto] sm:items-center sm:px-5 hover:sm:pl-6 [transition:background-color_150ms,padding_150ms]"
               >
                 <span className="font-mono text-[0.62rem] text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
                 <span className="font-mono text-sm font-semibold text-primary">{asset.asset_tag}</span>
@@ -104,7 +104,7 @@ export default async function DashboardPage() {
                   {asset.open_risks > 0 ? <Badge variant="secondary">{asset.open_risks} risk</Badge> : null}
                   {asset.compliance_gaps > 0 ? <Badge variant="destructive">{asset.compliance_gaps} gap</Badge> : null}
                   {asset.open_risks === 0 && asset.compliance_gaps === 0 ? <Badge variant="outline">Clear</Badge> : null}
-                  <ArrowUpRightIcon className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />
+                  <ArrowUpRightIcon className="size-4 text-muted-foreground transition-[color,transform] group-hover:text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </div>
               </Link>
             ))}

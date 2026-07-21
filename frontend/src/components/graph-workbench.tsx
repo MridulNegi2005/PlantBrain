@@ -206,6 +206,7 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                         stroke={active ? "var(--primary)" : "var(--border)"}
                         strokeWidth={active ? 1.6 : 1}
                         opacity={active ? 0.9 : 0.14}
+                        style={{ transition: "opacity 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease" }}
                       />
                     )
                   })}
@@ -229,6 +230,7 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                         }}
                         className="cursor-pointer outline-none focus-visible:[&>rect]:stroke-[var(--ring)]"
                         opacity={dim ? 0.32 : 1}
+                        style={{ transition: "opacity 0.3s ease" }}
                       >
                         <title>{node.label}</title>
                         <rect
@@ -240,6 +242,7 @@ export function GraphWorkbench({ initialGraph, initialAsset }: { initialGraph: K
                           fill={isSelected ? "var(--primary)" : "var(--card)"}
                           stroke={isSelected ? "var(--primary)" : isNeighbor ? "var(--primary)" : "var(--border)"}
                           strokeWidth={isSelected ? 2 : 1.4}
+                          style={{ transition: "fill 0.25s ease, stroke 0.25s ease, stroke-width 0.25s ease" }}
                         />
                         <text
                           textAnchor="middle"
