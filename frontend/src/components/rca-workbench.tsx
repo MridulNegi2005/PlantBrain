@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { AlertTriangleIcon, SearchCheckIcon, WrenchIcon } from "lucide-react"
 
 import { CitationList } from "@/components/citation-list"
@@ -19,8 +19,8 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupTextarea } from "@/components/ui/input-group"
 import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
-import { findSimilarLessons, generateRca } from "@/lib/api/client"
-import type { RcaReport, SimilarIncident } from "@/lib/api/types"
+import { findSimilarLessons, generateRca, getAssets } from "@/lib/api/client"
+import type { AssetSummary, RcaReport, SimilarIncident } from "@/lib/api/types"
 import { percent } from "@/lib/format"
 
 function withheldReason(reason?: string | null) {
@@ -44,6 +44,13 @@ export function RcaWorkbench() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lessonsError, setLessonsError] = useState<string | null>(null)
+  const [assets, setAssets] = useState<AssetSummary[]>([])
+
+  useEffect(() => {
+    getAssets()
+      .then((result) => setAssets(result.items))
+      .catch(() => setAssets([]))
+  }, [])
 
   async function run(event: FormEvent) {
     event.preventDefault()
@@ -96,8 +103,23 @@ export function RcaWorkbench() {
                 <FieldLabel htmlFor="rca-asset">Equipment tag</FieldLabel>
                 <InputGroup>
                   <InputGroupAddon><SearchCheckIcon /></InputGroupAddon>
-                  <InputGroupInput id="rca-asset" value={assetTag} maxLength={64} onChange={(event) => setAssetTag(event.target.value.toUpperCase())} />
+                  <InputGroupInput
+                    id="rca-asset"
+                    value={assetTag}
+                    maxLength={64}
+                    list="rca-asset-options"
+                    autoComplete="off"
+                    onChange={(event) => setAssetTag(event.target.value.toUpperCase())}
+                  />
                 </InputGroup>
+                <datalist id="rca-asset-options">
+                  {assets.map((asset) => (
+                    <option key={asset.asset_tag} value={asset.asset_tag}>
+                      {asset.asset_type}
+                    </option>
+                  ))}
+                </datalist>
+                <FieldDescription>Start typing to pick from your plant's equipment.</FieldDescription>
               </Field>
               <Field>
                 <FieldLabel htmlFor="rca-issue">What's going wrong</FieldLabel>
