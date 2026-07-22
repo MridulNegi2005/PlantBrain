@@ -8,7 +8,6 @@
 
 Built for **ET AI Hackathon 2026 — Problem Statement 8 (Industrial Knowledge Intelligence)**.
 
-<!-- TODO: drop a dashboard screenshot at docs/screenshot-dashboard.png -->
 ![PlantBrain dashboard](docs/screenshot-dashboard.png)
 
 ## What it does
