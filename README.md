@@ -1,6 +1,51 @@
 # PlantBrain AI
 
-*The missing memory layer for industrial operations.*
+**The missing memory layer for industrial operations — ask any question about a plant, get an answer stitched from every document, with every claim cited.**
+
+- 🚀 **Live app**: https://plantbrain-production.up.railway.app
+- 🔌 **Live API + interactive docs**: https://plantbrain-api-production.up.railway.app/docs
+- 📦 **Repo**: https://github.com/MridulNegi2005/PlantBrain
+
+Built for **ET AI Hackathon 2026 — Problem Statement 8 (Industrial Knowledge Intelligence)**.
+
+<!-- TODO: drop a dashboard screenshot at docs/screenshot-dashboard.png -->
+![PlantBrain dashboard](docs/screenshot-dashboard.png)
+
+## What it does
+
+PlantBrain is an asset-first, cited "operations brain" for an industrial plant. Ask a question in plain English and it fuses equipment manuals, work orders, inspection reports, incident logs, and compliance records into a single answer built around the asset you care about. Every claim points back to the exact document and page it came from. If it can't find a supporting source, it refuses to answer — no source, no answer.
+
+## Key features
+
+- **Cited copilot** — every answer carries page-level citations, a confidence score, an explicit list of what evidence is still missing, and recommended next actions. No source → no answer.
+- **GraphRAG, not just search** — combines semantic vector search (pgvector) with a real knowledge graph (asset → documents → failure modes → components). The copilot walks multi-hop links to answer questions no single document could.
+- **AI agents** — root-cause analysis, compliance-gap detection (catches missing statutory certificates), and similar-past-failure retrieval — all cited.
+- **Measured, not vibes** — a built-in evaluation harness scores the system on real questions with known answers.
+- **Secure by design** — uploaded documents are treated as untrusted; prompt-injection attempts are detected and the model refuses embedded instructions. Full audit trail.
+- **Data sovereignty** — provider-agnostic LLM: runs on Groq's free tier today, or swap to a local on-prem Ollama with a one-line config change so plant data never leaves the premises.
+
+## Proof it works
+
+Measured from an actual evaluation run:
+
+| Metric | Result |
+|---|---|
+| Retrieval hit-rate (top-5) | 100% |
+| Answer faithfulness (RAGAS) | 0.82 |
+| Answer relevancy (RAGAS) | 0.91 |
+| Context recall (RAGAS) | 0.92 |
+| Asset-tag extraction precision / recall | 100% / 100% |
+| Avg. answer time vs. manual search | ~3.9s vs ~12 min |
+
+## Tech stack
+
+FastAPI · PostgreSQL + pgvector · fastembed (local bge-small embeddings, no API key) · OpenAI-compatible LLM (Groq / Ollama) · NetworkX knowledge graph · Next.js + Tailwind frontend · deployed on Railway.
+
+## Team
+
+Mridul Negi (backend, ingestion, RAG/graph, AI agents) · Atishay Jain (frontend, product, demo).
+
+---
 
 ET AI Hackathon 2026 — Problem Statement 8 (AI for Industrial Knowledge Intelligence). Full product/build plan:
 `docs/plantbrain_ai_statement_8_deep_build_plan.md`. API contract for frontend/backend integration:
