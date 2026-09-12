@@ -8,8 +8,8 @@ source document and page. If the system finds no supporting source, it does not 
 The team built PlantBrain for the ET AI Hackathon 2026, Problem Statement 8 (Industrial Knowledge
 Intelligence).
 
-- Live application: https://plantbrain-production.up.railway.app
-- Live API and interactive documentation: https://plantbrain-api-production.up.railway.app/docs
+- Live application: https://plantbrain.mridulnegi.dev
+- Live API and interactive documentation: https://api.mridulnegi.dev/docs
 
 ![PlantBrain dashboard](docs/screenshot-dashboard.png)
 
@@ -65,7 +65,7 @@ The team measured these results from an evaluation run.
 - OpenAI-compatible LLM (Groq or Ollama)
 - NetworkX knowledge graph
 - Next.js with Tailwind CSS frontend
-- Railway deployment
+- Cloudflare Workers frontend and Oracle Cloud VM backend
 
 ## Team
 - Mridul Negi — backend, ingestion, RAG and graph, AI agents.

@@ -1,6 +1,6 @@
 # PlantBrain dual-frontend deployment plan
 
-Status: planning only — no source deployment, Oracle changes, Cloudflare changes, or DNS changes have been made.
+Status: partially implemented — frontend and API are live; teammate CORS, corpus ingestion, and production hardening remain.
 
 Date: 2026-09-13
 
@@ -19,7 +19,7 @@ plantbrain.mridulnegi.dev       ─┐
 
 ## What the repository currently does
 
-The current checkout is `main` at `e09e4d0` with a clean worktree.
+The current checkout is `main` at the deployment commit. The frontend Worker and Oracle API have been deployed and verified.
 
 - `frontend/` is a Next.js 16 App Router application with server-rendered pages and client workbenches. It uses `npm run dev`, `npm run build`, `npm run start`, `npm run lint`, `npm run test`, and `npm run typecheck`.
 - `frontend/src/lib/api/client.ts` builds every request as `${NEXT_PUBLIC_API_URL}${path}`. The production value must therefore be the API origin only, without `/api`, for example `https://<api-host>`.
@@ -29,7 +29,7 @@ The current checkout is `main` at `e09e4d0` with a clean worktree.
 - `backend/app/core/config.py` defaults `CORS_ORIGINS` to `http://localhost:3000`, and `.env.example` has the same value. Production must list both exact HTTPS frontend origins, comma-separated, with no trailing slash.
 - The backend has no reverse-proxy, systemd, Docker, Oracle, TLS, or health-monitoring files. `backend/Procfile` is Railway-oriented (`$PORT`).
 - Uploaded files are stored below `backend/uploads/`; these files and the PostgreSQL database need separate backup and persistence treatment on the VM.
-- The README still advertises Railway URLs. Those links should be changed only after the new API and frontend URLs are tested.
+- The README now advertises `https://plantbrain.mridulnegi.dev` and `https://api.mridulnegi.dev/docs`.
 - The threat model records production auth, rate limiting, RBAC, and database hardening as not implemented. The public deployment must either remain an explicitly limited demo or add access control before exposing upload, evaluation, and audit routes.
 
 ## Minimal implementation changes
@@ -76,11 +76,11 @@ The current checkout is `main` at `e09e4d0` with a clean worktree.
 
 ## Oracle Cloud VM checklist
 
-Do this only after the plan is approved and the VM details are known.
+The Oracle VM is Ubuntu 22.04 on ARM64. The API runs under systemd as `plantbrain`, with Caddy already serving the VM.
 
 1. Reserve a stable public IPv4 address. Record the OS, region, VM shape, and the address as deployment inventory.
-2. Create a non-root deploy user, install security updates, enable SSH keys, and keep SSH restricted to the required source addresses where practical.
-3. Install Python, a virtual environment, the pinned `backend/requirements.txt`, PostgreSQL, and a pgvector package compatible with the selected PostgreSQL version. Create a dedicated database role and database; do not expose PostgreSQL to the Internet.
+2. A dedicated `plantbrain` service user is in use; SSH remains through the existing `ubuntu` account with sudo.
+3. Python, the pinned `backend/requirements.txt`, and PostgreSQL 14 are installed. pgvector is unavailable in the Ubuntu ARM64 repository, so the API currently uses its BM25 fallback.
 4. Clone the exact release, create `/srv/plantbrain/backend/uploads` (or another persistent path), and decide whether `UPLOAD_DIR` needs a small code/config change to move uploads out of the release tree. Back up both the database and uploaded files.
 5. Copy production `.env` to the service host only. Run `python -m scripts.db_bootstrap`, load/ingest the intended corpus, and verify `/health` before putting the proxy in front.
 6. Run Uvicorn bound to `127.0.0.1:8000` under systemd with automatic restart and journald logs. Do not expose port 8000 publicly.
@@ -89,17 +89,16 @@ Do this only after the plan is approved and the VM details are known.
 9. Issue a certificate for `<api-host>` using Let's Encrypt/Certbot or a Cloudflare Origin CA certificate. Configure Cloudflare SSL/TLS to Full (strict) only after the origin certificate matches the API hostname and port 443 works.
 10. Verify `GET /health`, an allowed CORS preflight from each frontend, a rejected preflight from an unlisted origin, one read-only API request, one upload/ingestion flow, and the long-running copilot/RCA/evaluation timeout behavior.
 
-## Cloudflare and Name.com checklist (later, not now)
+## Cloudflare and Name.com checklist
 
 The current DNS lookup shows `mridulnegi.dev` delegated to `kimora.ns.cloudflare.com` and `kevin.ns.cloudflare.com`. That means Cloudflare is authoritative. Name.com remains the registrar; DNS records should be managed in Cloudflare, not Name.com.
 
-When ready:
+Completed for the owner frontend/API:
 
-1. In each Cloudflare Workers & Pages project, attach its custom domain. For the owner project use `plantbrain.mridulnegi.dev`; for the teammate use the agreed separate hostname. Cloudflare Pages Free currently allows 100 custom domains per project, so two frontend hostnames are within that limit.
-2. In the Cloudflare DNS zone, create or verify the frontend CNAMEs Cloudflare requests. Use the exact Pages/Workers target shown by the project; do not invent a target. Keep the frontend records proxied/managed by Cloudflare.
-3. Create `<api-host>` as an A/CNAME record to the API provider or reserved Oracle IPv4 address. Proxy it through Cloudflare only if that hostname is in a Cloudflare-managed zone and the origin is ready. Do not point the API record at a frontend project.
-4. Set SSL/TLS to Full (strict) for the API hostname or zone after installing a matching origin certificate. Cloudflare documents that Full (strict) validates an unexpired certificate from a publicly trusted CA or Cloudflare Origin CA.
-5. At Name.com, make no DNS edit while the Cloudflare nameservers remain authoritative. Only change registrar nameservers if Cloudflare explicitly shows that the zone is no longer delegated; never add competing A/CNAME records at Name.com.
+1. `plantbrain.mridulnegi.dev` is a proxied CNAME to the deployed Worker and a Worker route is attached.
+2. `api.mridulnegi.dev` is an A record to `144.24.125.218`, currently DNS-only, with a valid Caddy-managed Let's Encrypt certificate.
+3. Name.com was not changed; Cloudflare remains authoritative.
+4. Add the teammate's exact frontend origin to `CORS_ORIGINS` after he supplies the domain, then restart `plantbrain.service`.
 
 ## Frontend build and ownership
 
