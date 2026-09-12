@@ -1,6 +1,6 @@
 # PlantBrain dual-frontend deployment plan
 
-Status: partially implemented — frontend and API are live; teammate CORS, corpus ingestion, and production hardening remain.
+Status: partially implemented — frontend and API are deployed; remote PostgreSQL connection, teammate CORS, corpus ingestion, and production hardening remain.
 
 Date: 2026-09-13
 
@@ -12,7 +12,7 @@ plantbrain.mridulnegi.dev       ─┐
                                  │
 <api-host>                    ──┴─ (optional Cloudflare proxy) ── Oracle VM / Nginx ── FastAPI :8000
                                                                │
-                                                     PostgreSQL + pgvector
+                                                     Remote PostgreSQL + pgvector
 ```
 
 `plantbrain.mridulnegi.dev` is a valid and sensible hostname. The teammate should use a different hostname, for example `plantbrain-<name>.mridulnegi.dev`, or a hostname in their own domain. Both frontends can use the same API origin.
@@ -30,6 +30,7 @@ The current checkout is `main` at the deployment commit. The frontend Worker and
 - The backend has no reverse-proxy, systemd, Docker, Oracle, TLS, or health-monitoring files. `backend/Procfile` is Railway-oriented (`$PORT`).
 - Uploaded files are stored below `backend/uploads/`; these files and the PostgreSQL database need separate backup and persistence treatment on the VM.
 - The README now advertises `https://plantbrain.mridulnegi.dev` and `https://api.mridulnegi.dev/docs`.
+- PostgreSQL is hosted on a separate server. The local PostgreSQL package on the Oracle VM is disabled; the API must be pointed at the existing database before production health checks can pass.
 - The threat model records production auth, rate limiting, RBAC, and database hardening as not implemented. The public deployment must either remain an explicitly limited demo or add access control before exposing upload, evaluation, and audit routes.
 
 ## Minimal implementation changes
@@ -55,10 +56,10 @@ The current checkout is `main` at the deployment commit. The frontend Worker and
    ```text
    ENV=production
    DATABASE_URL=                         # leave empty when using POSTGRES_* assembly
-   POSTGRES_DB=plantbrain
-   POSTGRES_USER=<dedicated-db-user>
-   POSTGRES_PASSWORD=<long-random-password>
-   POSTGRES_HOST=127.0.0.1               # if PostgreSQL is on the same VM
+   POSTGRES_DB=<existing-database>
+   POSTGRES_USER=<database-user>
+   POSTGRES_PASSWORD=<database-password>
+   POSTGRES_HOST=<remote-postgres-host>
    POSTGRES_PORT=5432
    LLM_API_KEY=<provider-key>
    LLM_BASE_URL=https://api.groq.com/openai/v1
@@ -68,7 +69,7 @@ The current checkout is `main` at the deployment commit. The frontend Worker and
    MAX_UPLOAD_MB=20
    ```
 
-   Do not use the SQLite fallback, the default JWT secret, or a wildcard CORS origin in production. Keep `.env` outside Git and restrict its permissions.
+   Do not use the SQLite fallback, the default JWT secret, or a wildcard CORS origin in production. Allow the Oracle VM source IP (`144.24.125.218`) through the database server's firewall/allowlist. If the provider requires TLS, set `DATABASE_URL` with its required SSL parameters instead of using the assembled `POSTGRES_*` URL. Keep `.env` outside Git and restrict its permissions.
 
 5. Add only the deployment files required after the Oracle runtime is selected: a systemd unit (or the chosen process supervisor), an Nginx or Caddy reverse-proxy configuration, a health-check/backup note, and a production runbook. Do not change API routes or database models for this split-host arrangement.
 
@@ -80,9 +81,9 @@ The Oracle VM is Ubuntu 22.04 on ARM64. The API runs under systemd as `plantbrai
 
 1. Reserve a stable public IPv4 address. Record the OS, region, VM shape, and the address as deployment inventory.
 2. A dedicated `plantbrain` service user is in use; SSH remains through the existing `ubuntu` account with sudo.
-3. Python, the pinned `backend/requirements.txt`, and PostgreSQL 14 are installed. pgvector is unavailable in the Ubuntu ARM64 repository, so the API currently uses its BM25 fallback.
+3. Python and the pinned `backend/requirements.txt` are installed. A local PostgreSQL package was used only for testing and is disabled; production uses the separate PostgreSQL server.
 4. Clone the exact release, create `/srv/plantbrain/backend/uploads` (or another persistent path), and decide whether `UPLOAD_DIR` needs a small code/config change to move uploads out of the release tree. Back up both the database and uploaded files.
-5. Copy production `.env` to the service host only. Run `python -m scripts.db_bootstrap`, load/ingest the intended corpus, and verify `/health` before putting the proxy in front.
+5. Copy production `.env` to the service host only. Verify network access and credentials to the remote database. Run `python -m scripts.db_bootstrap` only if the existing database is the intended PlantBrain target and the database user may create/alter the required schema; otherwise apply the provider-approved schema change and load/ingest the intended corpus. Verify `/health` before putting the proxy in front.
 6. Run Uvicorn bound to `127.0.0.1:8000` under systemd with automatic restart and journald logs. Do not expose port 8000 publicly.
 7. Put Nginx or Caddy on ports 80 and 443 with `server_name <api-host>`, proxying to `http://127.0.0.1:8000`. Preserve `Host`, `X-Forwarded-For`, `X-Forwarded-Proto`, request method, and upload body size (at least the configured 20 MB).
 8. Allow only SSH, HTTP, and HTTPS in the Oracle security list and VM firewall. Keep PostgreSQL and Uvicorn private.
