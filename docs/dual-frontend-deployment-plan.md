@@ -1,6 +1,6 @@
 # PlantBrain dual-frontend deployment plan
 
-Status: partially implemented — frontend and API are deployed; remote PostgreSQL connection, teammate CORS, corpus ingestion, and production hardening remain.
+Status: partially implemented — frontend, API, and remote PostgreSQL are live; teammate CORS, corpus ingestion, and production hardening remain.
 
 Date: 2026-09-13
 
@@ -30,7 +30,7 @@ The current checkout is `main` at the deployment commit. The frontend Worker and
 - The backend has no reverse-proxy, systemd, Docker, Oracle, TLS, or health-monitoring files. `backend/Procfile` is Railway-oriented (`$PORT`).
 - Uploaded files are stored below `backend/uploads/`; these files and the PostgreSQL database need separate backup and persistence treatment on the VM.
 - The README now advertises `https://plantbrain.mridulnegi.dev` and `https://api.mridulnegi.dev/docs`.
-- PostgreSQL is hosted on a separate server. The local PostgreSQL package on the Oracle VM is disabled; the API must be pointed at the existing database before production health checks can pass.
+- PostgreSQL is hosted on a separate server. The local PostgreSQL package on the Oracle VM is disabled, and the API is configured through the remote `POSTGRES_*` settings.
 - The threat model records production auth, rate limiting, RBAC, and database hardening as not implemented. The public deployment must either remain an explicitly limited demo or add access control before exposing upload, evaluation, and audit routes.
 
 ## Minimal implementation changes
